@@ -174,6 +174,7 @@ class Bus:
         if not isinstance(state, dict): raise ValueError("state debe ser objeto JSON")
         version=state.get("version")
         if version is None: raise ValueError("estado sin version")
+        self.register("system:git-state",["public_state_import"])
         return self.publish_context("system:git-state","public_git_state",{
             "version":version,"fecha":state.get("fecha"),
             "ultima_actualizacion":state.get("ultima_actualizacion"),
