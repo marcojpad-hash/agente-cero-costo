@@ -23,8 +23,10 @@ dice dónde sí se puede. Cada "no se puede" corregido se vuelve regla.
 - `modelos/` — TwIL-8B: modelo abierto de 8.8B recién salido (nov 2026),
   qué promete, qué necesita de memoria y dónde cabe a costo cero.
 - `orquestador/` — el coordinador de CAPCOT (gpt-oss-120b por Groq,
-  gratis) y su workflow de GitHub Actions. Vive en CAPCOT; aquí va el
-  apunte.
+  gratis): lee el tablero y escribe el reporte de qué está atorado.
+- `maquina/` — la máquina definida en el repo: Dockerfile y setup.sh
+  que convierten cualquier host (Docker o VM limpia, por ejemplo Oracle
+  ARM) en la máquina agente.
 
 ## Las piezas, en una línea cada una
 
