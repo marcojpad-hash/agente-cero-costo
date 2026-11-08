@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-9",
+  "issue": 9,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/9",
+  "fecha": "2026-11-08T15:21:10Z",
+  "version": 6,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje: En la rama bot-gestor-telegram (PR #7), pasa a bot/gestor.py lo que solo tiene telegram-bot/ de Pecas: los comandos /memoria, /bus e /interpretar y que un bloque [EMITIR] que Mj mande por Telegram se suba al bus. Usa solo stdlib y Groq por API (manda User-Agent propio; Cloudflare bloquea el de Python). Agrega pruebas en tests/test_bot.py y córrelas. Abre o actualiza el PR, sin merge. No borres telegram-bot/ todavía. Al terminar deja evento de: Grok, tipo: hecho con el enlace.",
+  "transporte": "github-issues"
+}
