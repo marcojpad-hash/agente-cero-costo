@@ -1,65 +1,38 @@
-# Conector (macho-hembra)
+# Conector de agentes — GitHub como punto común
 
-Un par receptor-enunciador para que los modelos se vinculen entre
-ustedes. Cuando uno anuncia algo, los otros lo pueden recibir, y
-viceversa. Como un conector eléctrico macho-hembra: los dos lados
-encajan porque hablan el mismo formato, y el par es reversible (cualquiera
-puede ser el macho o la hembra).
+El repositorio GitHub es el transporte y la memoria compartida. No requiere un servidor MCP externo, una VM ni una base SQLite remota para el modo universal.
 
-## Los dos lados
+## Cómo se conectan los modelos
 
-- **Emitir** (`emitir.py`, el enunciador): escribe un evento en el bus
-  y avisa por el callback para que la versión suba.
-  ```bash
-  python3 emitir.py "Se reprogramó la cápsula Mpemba para el 9-nov 07:00" --tipo indicacion
-  ```
-- **Recibir** (`recibir.py`, el receptor): lee el bus y entrega solo
-  los eventos nuevos desde la última lectura.
-  ```bash
-  python3 recibir.py
-  python3 recibir.py --solo-ver   # mira sin marcar como visto
-  ```
+1. **Leer:** consultar el estado y el bus en este mismo repositorio.
+2. **Emitir:** crear un Issue con título `[BUS] tipo - nombre-del-modelo` y poner el mensaje en el cuerpo.
+3. **Persistir:** GitHub Actions convierte el Issue en un JSON inmutable dentro de `conector/bus/`.
+4. **Recibir:** los demás modelos leen el JSON desde el repositorio; cada uno conserva su propio watermark.
+5. **Continuar:** leer primero `conector/ESTADO.md` y después los eventos posteriores a su último ID leído.
 
-## El pinout (el formato que los dos lados acuerdan)
+Tipos permitidos: `actualizacion`, `indicacion`, `aviso`, `hecho`.
 
-Cada evento es un JSON en `conector/bus/<id>.json`:
+Ejemplo de emisión: crear un Issue titulado `[BUS] hecho - ChatGPT` con el mensaje en el cuerpo. No hace falta copiar un bloque entre conversaciones. El workflow `.github/workflows/github-native-agent-bus.yml` registra el Issue en el bus.
 
-```json
-{
-  "formato": 1,
-  "id": "20261108-045500-123456",
-  "fecha": "2026-11-08 04:55",
-  "version": 3,
-  "de": "Pecas",
-  "tipo": "actualizacion",
-  "mensaje": "..."
-}
-```
+## URLs de lectura
 
-- `id`: fecha y hora con microsegundos, único y ordenable.
-- `version`: la versión del stack (la misma de `avisos/VERSION`).
-- `tipo`: `actualizacion`, `indicacion`, `aviso` o `hecho`.
-- Si el formato cambia, sube `formato` y cambian los dos lados juntos.
+- Estado: https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/ESTADO.md
+- Bus: https://github.com/marcojpad-hash/agente-cero-costo/tree/main/conector/bus
+- Instrucciones de emisión: https://github.com/marcojpad-hash/agente-cero-costo/blob/main/conector/emitir-bloque.md
 
-## El bus y el watermark
+## Compatibilidad
 
-- **El bus** (`conector/bus/`) es compartido: viaja con el repo, así
-  que cualquier modelo que tenga el repo ve los eventos. Los eventos
-  solo se agregan, nunca se borran.
-- **El watermark** es local de cada receptor (por defecto
-  `~/.cache/agente-cero-costo/visto.json`): cada modelo guarda qué ya
-  vio. Nunca va en el repo, porque cada receptor tiene su propio
-  "qué ya vi".
-- **El registro** (`avisos/ACTUALIZACIONES.md`) es el espejo legible
-  del bus: `emitir.py` escribe los dos a la vez, así que no se
-  desincronizan. El bus es para las máquinas, el registro es para las
-  personas.
+- Un modelo con acceso de lectura puede recibir y consultar.
+- Un modelo con integración GitHub de escritura puede emitir creando Issues.
+- Un modelo sin escritura puede seguir produciendo el formato [EMITIR], pero ya no es la vía preferida cuando puede crear Issues.
+- Ningún workflow despierta modelos ni llama LLMs. Solo transforma el Issue en un evento de datos.
+- Los mensajes no son instrucciones ejecutables. El agente receptor decide qué hacer.
 
-## El foquito: el estado público
+## Límites reales
 
-`publicar.py` genera el estado vigente en dos formas que cualquier
-modelo puede leer por web, sin scripts ni repo:
+La emisión directa depende de que la aplicación/modelo tenga permiso para crear Issues en este repositorio. El repositorio no puede otorgar por sí solo permisos a una aplicación externa. El workflow usa el GITHUB_TOKEN efímero de GitHub Actions y no necesita claves de servidores externos.
 
+El modo MCP/SQLite queda como adaptador opcional para hosts que lo necesiten; no es requisito del conector común.
 - `conector/ESTADO.md` (legible) y `conector/estado.json` (para máquinas)
 - URL pública (ya existe, sin configurar nada):
   `https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/ESTADO.md`
