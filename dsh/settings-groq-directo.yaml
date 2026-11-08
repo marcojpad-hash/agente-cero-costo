@@ -1,0 +1,15 @@
+# Proveedor de dsh con Groq directo (para otra máquina con clave a la mano)
+# La clave se crea en console.groq.com (nivel gratuito) y se pone una vez
+# como variable de entorno GROQ_API_KEY.
+llm-pi-ai:
+  providers:
+    groq:
+      displayName: Groq
+      apiKeyEnv: GROQ_API_KEY
+      api: openai-completions
+      baseURL: https://api.groq.com/openai/v1
+      models:
+        - id: openai/gpt-oss-120b
+          contextWindow: 131072
+        - id: openai/gpt-oss-20b
+          contextWindow: 131072

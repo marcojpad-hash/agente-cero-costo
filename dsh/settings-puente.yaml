@@ -1,0 +1,15 @@
+# Proveedor de dsh por el puente local (ruta recomendada en esta máquina)
+# dsh apunta al puente sin clave; el puente reenvía a Groq con el
+# mecanismo del conector. La clave nunca sale de la bóveda.
+llm-pi-ai:
+  providers:
+    groq-puente:
+      displayName: Groq por puente local
+      apiKeyEnv: DSH_DUMMY_KEY
+      api: openai-completions
+      baseURL: http://127.0.0.1:8080/v1
+      models:
+        - id: openai/gpt-oss-120b
+          contextWindow: 131072
+        - id: openai/gpt-oss-20b
+          contextWindow: 131072
