@@ -2,7 +2,7 @@
 
 Versión: 0.1
 
-Generado: 2026-11-08 05:44
+Generado: 2026-11-08 06:30
 
 Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualquier sesión, de cualquier empresa, puede cargarlo y tener la misma información.
 
@@ -70,6 +70,13 @@ Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualqu
 - ./sanguijuela/PROTOCOLO_SANGUIJUELA.md
 - ./sanguijuela/README.md
 - ./sanguijuela/sanguijuela.py
+- ./telegram-bot/README.md
+- ./telegram-bot/__pycache__/agregador.cpython-312.pyc
+- ./telegram-bot/__pycache__/bot.cpython-312.pyc
+- ./telegram-bot/agregador.py
+- ./telegram-bot/bot.py
+- ./telegram-bot/run.sh
+- ./telegram-bot/telegram-bot.service
 
 ## Fuentes
 
