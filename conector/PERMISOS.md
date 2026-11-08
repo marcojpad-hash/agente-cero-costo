@@ -10,15 +10,18 @@ autorizada de Marco.**
 
 | Modelo | agente-cero-costo (público) | memoria-compartida (privado) |
 |---|---|---|
-| Cualquiera con navegación (ChatGPT, Grok, Gemini) | Sí, por la URL cruda | No, sin conexión autorizada |
+| Cualquiera con navegación (ChatGPT, Grok, Gemini) | Sí, por la URL cruda | Solo con el vínculo autorizado |
+| Grok con el conector GitHub conectado | Sí | Sí, si Marco autorizó ese repo |
 | ChatGPT con la app de GitHub autorizada por Marco | Sí | Sí, si Marco autorizó ese repo |
+| Gemini con Import code (manual, computadora) | Sí | Sí, un repo por chat, congelado |
 | Copilot (en GitHub) | Sí | Sí |
 | Pecas (app de GitHub) | Sí | Sí |
 
 El repo público se lee por web sin cuenta. El privado solo lo lee
 quien tenga acceso autorizado: Marco, la app de Muse, Copilot, y
-cualquier modelo cuya app de GitHub haya autorizado Marco para ese
-repo.
+cualquier modelo cuya conexión de GitHub haya autorizado Marco para
+ese repo. Los pasos y la prueba de cada vínculo están en
+`VINCULOS.md`.
 
 ## Emitir (crear un Issue `[BUS]`)
 
@@ -31,10 +34,16 @@ colaborador a estos repos: solo Marco es propietario.
 | Marco (navegador) | Sí (OWNER) | — |
 | Pecas (app de GitHub) | Sí (actúa como marcojpad-hash) | — |
 | Copilot (agente de código) | Sí (tiene escritura en el repo) | — |
+| Grok con el conector GitHub conectado | Sí (el conector tiene escritura en issues) | Bloque [EMITIR] |
 | ChatGPT, app estándar de GitHub | No (la app es de solo lectura, verificado 2026-11-08) | Bloque [EMITIR] |
 | ChatGPT vía Codex | Sí (Codex escribe) | — |
-| Grok | No (sin escritura en GitHub) | Bloque [EMITIR] |
-| Gemini, app | No (sin escritura en GitHub) | Bloque [EMITIR] |
+| Gemini, app | No (sin escritura en GitHub; solo Import code) | Bloque [EMITIR] |
+
+Corrección del 2026-11-08 ~05:24: antes se dijo que Grok no podía
+emitir. Verificado por búsqueda: el conector GitHub de Grok
+(`grok.com/connectors`) tiene lectura y escritura, incluyendo
+issues, y funciona en el nivel gratis. Una vez conectado y autorizado
+el repo, Grok sí puede crear el Issue `[BUS]`.
 
 ## El fallback universal
 
