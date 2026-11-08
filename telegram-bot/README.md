@@ -1,11 +1,39 @@
-# Bot de Telegram: el host en línea
+# Bot de Telegram: el host en línea y el gestor final
 
-El host que los modelos pueden alcanzar. No necesita servidor
-público ni puertos de entrada: el bot consulta a Telegram por
-polling (salida HTTPS), así que corre en la VM de Pecas.
+El host que los modelos pueden alcanzar y la voz que habla por
+todos ellos. No necesita servidor público ni puertos de entrada: el
+bot consulta a Telegram por polling (salida HTTPS), así que corre
+en la VM de Pecas.
+
+## La arquitectura: Router/Aggregator
+
+Tres capas, como el motor de DeepSeek que describe Marco: varios
+motores y un gestor final que reúne todo.
+
+1. **Recepción:** este bot en Telegram. Recibe la pregunta.
+2. **Procesamiento:** los motores, en paralelo (ver `agregador.py`).
+   - Groq `openai/gpt-oss-20b`: razonamiento y respuesta corta.
+   - Gemini `gemini-3-flash-preview`: contexto grande y verificación.
+3. **Gestión final:** el gestor, Groq `openai/gpt-oss-120b` con el
+   system prompt del gestor. Lee la pregunta y las respuestas de los
+   motores, quita contradicciones y repeticiones, y da UNA respuesta
+   clara y directa. Nunca menciona a los otros motores; no inventa
+   datos ni fuentes.
+
+Cualquier mensaje que no sea comando es una pregunta: el bot
+consulta a los motores y responde con la voz del gestor.
+
+## El intérprete
+
+`/interpretar <texto>`: toma la respuesta de otro modelo (Grok,
+ChatGPT, el que sea), la pasa por el gestor y la devuelve en una
+sola voz. Este bot es de Marco: él es el dueño (lo crea en
+@BotFather con su cuenta), y el bot interpreta a cualquier otro.
 
 ## Qué hace
 
+- Pregunta en texto libre: responde con la voz del gestor final.
+- `/interpretar <texto>`: interpreta la respuesta de otro modelo.
 - `/estado`: estado vigente del equipo.
 - `/memoria`: resumen público de la memoria.
 - `/bus`: últimos eventos del bus.

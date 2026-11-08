@@ -33,6 +33,7 @@ REPO = os.path.dirname(HERE)
 CONECTOR = os.path.join(REPO, "conector")
 BUS = os.path.join(CONECTOR, "bus")
 APLICAR = os.path.join(CONECTOR, "aplicar.py")
+AGREGADOR = os.path.join(HERE, "agregador.py")
 DIGEST = os.path.join(REPO, "memoria-digest", "DIGEST.md")
 ESTADO = os.path.join(CONECTOR, "ESTADO.md")
 GITHUB_CLI = "/opt/hatch/bin/github"
@@ -132,12 +133,43 @@ def aplicar_bloque(texto):
     return True, r.stdout.strip()
 
 
+def agregar_pregunta(pregunta):
+    """Pregunta a los motores y devuelve la respuesta del gestor final."""
+    r = subprocess.run(
+        [sys.executable, AGREGADOR, pregunta],
+        capture_output=True, text=True, timeout=600)
+    if r.returncode != 0:
+        return None, (r.stderr or r.stdout).strip()[:300] or "falló el agregador"
+    # La salida trae las secciones de los motores y al final el gestor.
+    texto = r.stdout
+    marca = "=== Gestor final ==="
+    if marca in texto:
+        final = texto.split(marca, 1)[1]
+        final = final.split("--- cuenta:", 1)[0].strip()
+        return final, ""
+    return texto.strip(), ""
+
+
+def interpretar_texto(texto):
+    r = subprocess.run(
+        [sys.executable, AGREGADOR, "--interpretar", texto],
+        capture_output=True, text=True, timeout=600)
+    if r.returncode != 0:
+        return None, (r.stderr or r.stdout).strip()[:300] or "falló el intérprete"
+    return r.stdout.split("--- cuenta:", 1)[0].strip(), ""
+
+
 AYUDA = (
-    "Soy el host del equipo. Comandos:\n"
+    "Soy el host del equipo y hablo por todos los motores. "
+    "Escríbeme una pregunta y te respondo con una sola voz, "
+    "después de consultar a los motores.\n\n"
+    "Comandos:\n"
     "/estado - estado vigente\n"
     "/memoria - resumen público de la memoria\n"
     "/bus - últimos eventos del bus\n"
-    "Para emitir, mándame el bloque:\n"
+    "/interpretar <texto> - interpreto la respuesta de otro modelo "
+    "(Grok, ChatGPT, el que sea) y te la devuelvo en una sola voz\n"
+    "Para emitir al bus, mándame el bloque:\n"
     "[EMITIR]\n"
     "de: <tu nombre>\n"
     "tipo: actualizacion\n"
@@ -168,6 +200,19 @@ def responder(token, chat_id, texto):
                    f"paso de Pecas).")
         return
     cmd = texto.strip().split()[0].lower() if texto.strip() else ""
+    if cmd == "/interpretar":
+        resto = texto.strip()[len("/interpretar"):].strip()
+        if not resto:
+            enviar(token, chat_id,
+                   "Pega el texto después de /interpretar, así:\n"
+                   "/interpretar <respuesta de otro modelo>")
+            return
+        final, err = interpretar_texto(resto)
+        if final:
+            enviar(token, chat_id, final)
+        else:
+            enviar(token, chat_id, f"No pude interpretarlo: {err}")
+        return
     if cmd in ("/start", "/ayuda", "/help"):
         enviar(token, chat_id, AYUDA)
     elif cmd == "/estado":
@@ -187,9 +232,14 @@ def responder(token, chat_id, texto):
                           f"{e.get('de','')}: {e.get('mensaje','')}")
         enviar(token, chat_id, "\n".join(lineas))
     else:
-        enviar(token, chat_id,
-               "No entendí. Usa /ayuda para ver los comandos, o "
-               "mándame un bloque [EMITIR] para emitir al bus.")
+        # Cualquier otro mensaje es una pregunta: el gestor final
+        # consulta a los motores y responde con una sola voz.
+        enviar(token, chat_id, "Consultando a los motores...")
+        final, err = agregar_pregunta(texto)
+        if final:
+            enviar(token, chat_id, final)
+        else:
+            enviar(token, chat_id, f"Me atoré con la pregunta: {err}")
 
 
 def main():
