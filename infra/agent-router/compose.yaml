@@ -1,0 +1,15 @@
+services:
+  agent-router:
+    build: .
+    restart: unless-stopped
+    environment:
+      ROUTER_DB: /data/router.sqlite3
+      ROUTER_INGEST_TOKEN: ${ROUTER_INGEST_TOKEN:?set ROUTER_INGEST_TOKEN}
+      ALLOWED_REPOSITORIES: ${ALLOWED_REPOSITORIES:-marcojpad-hash/agente-cero-costo}
+      AGENT_WEBHOOKS_JSON: ${AGENT_WEBHOOKS_JSON:-{}}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - router-data:/data
+volumes:
+  router-data:
