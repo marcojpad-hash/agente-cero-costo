@@ -11,8 +11,15 @@ Nunca decir que no se puede sin haber probado el análogo o el fallback y
 sin haber dejado el intento en el repo. Cuando algo no se puede aquí, se
 dice dónde sí se puede. Cada "no se puede" corregido se vuelve regla.
 
+**Regla adicional obligatoria:** cada error activa ingeniería inversa,
+análisis de causa raíz, corrección del mecanismo, prevención, prueba de
+regresión y registro del aprendizaje en el Gabinete. El usuario no es el
+mecanismo de QA ni debe volver a encontrar el mismo fallo por nosotros.
+Contrato: `gabinete/APRENDIZAJE_DE_FALLOS/CONTRATO_INGENIERIA_INVERSA.md`.
+
 ## Qué hay aquí
 
+- `gabinete/APRENDIZAJE_DE_FALLOS/` — contrato transversal de ingeniería inversa de fallos, expedientes, reglas aprendidas y prevención de recurrencias.
 - `puente-groq/` — un puente local que deja usar la API gratuita de Groq
   sin que la clave salga nunca de la bóveda. dsh apunta al puente sin
   clave y el puente reenvía a Groq. Verificado: lista de modelos y chat
