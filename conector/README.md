@@ -77,3 +77,22 @@ cat bloque.txt | python3 aplicar.py
 - Recibir es automático (la URL pública); emitir es por el bloque
   (el usuario pega la respuesta). Esa es la única vía para un modelo
   de chat sin acceso al repo.
+
+## Traductor macho-hembra (`traductor.py`)
+
+Cada modelo habla a su manera, y el traductor lo pasa todo a un solo formato (`de`, `tipo`, `mensaje`, `necesita`, `para`) antes de meterlo al bus. Entiende cuatro formas de mandar mensajes:
+
+- el bloque `[EMITIR]`,
+- un issue con título `[BUS] tipo - Modelo`,
+- un JSON,
+- texto libre del tipo `Modelo: mensaje`.
+
+El enchufe funciona en tres tiempos:
+
+- **Macho.** Cada modelo se registra con lo que sabe hacer, usando `Bus.register`.
+- **Hembra.** Si el mensaje trae `necesita`, va al primer modelo que tenga esa capacidad, y nunca al que lo pidió. Si no trae `necesita`, les llega a todos.
+- **Vuelta.** Si el que lo recibe no puede, se marca `fallo` y el mensaje pasa solo al siguiente que encaje. Si ya no queda nadie, le llega a `mj`.
+
+`luces()` da un foquito por mensaje y por modelo: 🟡 pendiente, 🟢 confirmado y 🔴 no pudo.
+
+Los mensajes que llegan de fuera quedan marcados como `external:`, así que nadie puede hacerse pasar por un modelo registrado. Las pruebas están en `tests/test_traductor.py`.
