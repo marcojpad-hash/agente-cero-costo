@@ -18,7 +18,7 @@ Todas las rutas salvo health requieren `Authorization: Bearer <ROUTER_INGEST_TOK
 
 `ROUTER_INGEST_TOKEN`: secreto compartido entre Actions y conectores autorizados.
 `ALLOWED_REPOSITORIES`: repositorios admitidos, separados por coma.
-`AGENT_WEBHOOKS_JSON`: mapa JSON de agentes a endpoints de callback. En esta primera versión se crean entregas durables y los agentes consultan su cola; el mapa reserva la expansión a push por webhook.
+`AGENT_WEBHOOKS_JSON`: mapa JSON de agentes a endpoints HTTPS de callback, por ejemplo `{"claude":"https://agent-host/notify","gemini":"https://other-host/wake"}`. El router primero persiste el evento y luego hace POST a cada endpoint configurado. Si el callback falla, la entrega queda en RETRY y sigue disponible en la cola durable.
 
 No se guardan credenciales de proveedores en Git. El token debe inyectarse en el host mediante gestor de secretos o archivo de entorno privado.
 
@@ -33,7 +33,7 @@ No se guardan credenciales de proveedores en Git. El token debe inyectarse en el
 5. Configurar allowlist y registro de agentes.
 6. Probar POST, consultar cola por agente, ACK y reiniciar el contenedor para verificar persistencia.
 
-El servicio enlaza el puerto a localhost. Publicarlo externamente solo detrás de HTTPS reverse proxy/firewall. No exponer SQLite ni el puerto sin TLS.
+El router crea una entrega durable por agente, intenta el callback HTTPS inmediatamente y conserva la cola para reintentos/consulta. Los endpoints de agentes deben autenticar el token compartido y responder 2xx solo después de aceptar el evento de forma durable. El servicio enlaza el puerto a localhost. Publicarlo externamente solo detrás de HTTPS reverse proxy/firewall. No exponer SQLite ni el puerto sin TLS.
 
 ## Integración de conversaciones
 
