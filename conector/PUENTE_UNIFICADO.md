@@ -17,7 +17,7 @@ No se reemplaza el mecanismo público ni se presupone que los chats puedan escri
 - publish_context(agent_id, context_key, document, expected_revision)
 - get_context(context_key)
 - get_bootstrap_context(agent_id, context_key, limit) — una sola lectura al activarse.
-- ingest_emit_block(block_text)
+- ingest_emit_block(block_text)\n- ingest_git_event(event) — importa un JSON de conector/bus con ID idempotente.\n- ingest_public_state(state) — importa conector/estado.json como snapshot versionado.
 
 ## Continuidad y latencia
 
@@ -48,4 +48,4 @@ Endpoint: /mcp. Publicar únicamente detrás de HTTPS y una red privada. /health
 
 ## Compatibilidad con el bus Git
 
-El bus Git de conector/bus/ y el SQLite MCP son dos persistencias distintas. Esta versión unifica el contrato y permite ingestar bloques, pero no sincroniza automáticamente commits Git con SQLite ni publica eventos SQLite en GitHub. Esa sincronización requiere credenciales de escritura del repositorio en un adaptador de despliegue; no se debe fingir que existe. El estado público en ESTADO.md sigue siendo el punto de lectura universal para modelos con navegación.
+El bus Git de conector/bus/ y el SQLite MCP son dos persistencias distintas. Para cruzar la información, el host que ya pueda leer GitHub obtiene estado.json y cada evento JSON, y los pasa a ingest_public_state e ingest_git_event. Los IDs Git se conservan como claves idempotentes, por lo que una relectura no duplica eventos. El bloque [EMITIR] se ingesta con ingest_emit_block. La publicación inversa SQLite→GitHub todavía requiere un adaptador con credenciales de escritura; no se finge que existe. El estado público en ESTADO.md sigue siendo el punto de lectura universal para modelos con navegación.
