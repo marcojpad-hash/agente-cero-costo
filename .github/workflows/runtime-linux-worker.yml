@@ -1,0 +1,39 @@
+name: Runtime Linux worker — resource probe
+
+on:
+  push:
+    branches:
+      - runtime-linux-worker-20261108
+    paths:
+      - ".github/workflows/runtime-linux-worker.yml"
+      - "runtime/linux_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-linux-worker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  linux-probe:
+    name: Measure real Linux runner resources
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout runtime probe
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Execute resource and repeatability probe
+        run: python runtime/linux_probe.py
+      - name: Preserve measured execution result
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-linux-probe-${{ github.run_id }}
+          path: runtime-result.json
+          if-no-files-found: error
+          retention-days: 30
