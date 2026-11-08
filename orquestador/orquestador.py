@@ -39,7 +39,7 @@ DEFAULT_MODEL = "openai/gpt-oss-120b"
 
 REGLAS = """Reglas que no se te pueden olvidar:
 - Imaginantes monta el MP4 oficial con la voz es-MX-JorgeNeural y corre el QA oficial. Si está pausado por ahorro de créditos, la cápsula espera: no se reasigna a otro modelo.
-- Pecas NO puede subir archivos de .github/workflows/ por API (la app de Muse no tiene permiso Workflows). Esos archivos los sube Marco por navegador.
+- Pecas NO puede subir archivos de .github/workflows/ por API (la app de Muse no tiene permiso Workflows). Esos archivos los suben Copilot/Codex por el bus (delegación); Marco NO sube nada por navegador.
 - Marco es quien crea las cuentas (por ejemplo Clayzo) y quien activa cosas en Settings de GitHub. Pecas no tiene sus contraseñas.
 - Copilot trabaja en el repo, pero ya NO es el orquestador.
 - No inventes datos, fuentes ni DOIs. Si algo no está en el tablero, di que no está."""
