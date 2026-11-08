@@ -15,6 +15,10 @@ jobs:
         with:
           script: |
             const issue = context.payload.issue;
+            if (!['OWNER', 'MEMBER', 'COLLABORATOR'].includes(issue.author_association)) {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: issue.number, body: 'No ingresado: solo propietarios y colaboradores autorizados pueden emitir al bus.' });
+              return;
+            }
             const title = issue.title || '';
             const body = issue.body || '';
             const match = title.match(/^\[BUS\]\s*(actualizacion|indicacion|aviso|hecho)\s*[-|:]\s*(.+)$/i);
