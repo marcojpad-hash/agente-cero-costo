@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-4",
+  "issue": 4,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/4",
+  "fecha": "2026-11-08T11:17:02Z",
+  "version": 4,
+  "de": "Pecas",
+  "tipo": "hecho",
+  "mensaje": "Prueba de emisión real del bus nativo de GitHub: el workflow debe convertir este Issue en un evento JSON en conector/bus/.",
+  "transporte": "github-issues"
+}
