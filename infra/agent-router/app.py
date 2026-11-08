@@ -10,10 +10,12 @@ from typing import Any
 
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
+import urllib.request
 
 DB_PATH = os.getenv("ROUTER_DB", "/data/router.sqlite3")
 INGEST_TOKEN = os.getenv("ROUTER_INGEST_TOKEN", "")
 AGENTS = json.loads(os.getenv("AGENT_WEBHOOKS_JSON", "{}"))
+AGENT_CALLBACK_TOKEN = os.getenv("AGENT_CALLBACK_TOKEN", "")
 ALLOWED_REPOSITORIES = set(filter(None, os.getenv("ALLOWED_REPOSITORIES", "").split(",")))
 app = FastAPI(title="Shared Agent Router", version="1.0.0")
 
@@ -80,6 +82,23 @@ def persist_event(payload: dict[str, Any], source: str):
                 "INSERT OR IGNORE INTO deliveries(event_id,agent_id,updated_at) VALUES(?,?,?)",
                 (event_id, agent_id, now),
             )
+    # Durable queue is authoritative; HTTPS callbacks wake registered agents.
+    for agent_id, endpoint in AGENTS.items():
+        if not isinstance(endpoint, str) or not endpoint.startswith("https://"):
+            continue
+        try:
+            req = urllib.request.Request(
+                endpoint, data=raw.encode("utf-8"),
+                headers={"Content-Type": "application/json", "Authorization": "Bearer " + AGENT_CALLBACK_TOKEN, "X-Agent-Id": agent_id},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=8) as response:
+                if 200 <= response.status < 300:
+                    with db() as conn:
+                        conn.execute("UPDATE deliveries SET status='RECEIVED',updated_at=? WHERE event_id=? AND agent_id=?", (datetime.now(timezone.utc).isoformat(), event_id, agent_id))
+        except Exception as exc:
+            with db() as conn:
+                conn.execute("UPDATE deliveries SET status='RETRY',attempts=attempts+1,last_error=?,updated_at=? WHERE event_id=? AND agent_id=?", (str(exc)[:500], datetime.now(timezone.utc).isoformat(), event_id, agent_id))
     return envelope
 
 
