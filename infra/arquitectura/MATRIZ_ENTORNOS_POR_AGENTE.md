@@ -68,3 +68,15 @@ Cada agente tiene identidad y carpeta privada. Escritura cruzada solo donde la a
 Si el runtime preferido no está disponible, generar y usar el equivalente que sí pueda ejecutar ese agente (contenedor, VM, Codespace, runner, proceso local o adaptador Git/HTTPS). No detener el trabajo en una incompatibilidad de plataforma. No afirmar que un runtime temporal es una VM persistente ni que un adaptador preparado ya está conectado.
 
 La infraestructura común no debe depender de que todos los agentes compartan sistema operativo. Debe depender de un protocolo pequeño, abierto y verificable.
+
+
+## Callback inmediato y continuidad conversacional
+
+Se incorporó:
+- `.github/workflows/agent-callback.yml`: reacciona a push, issues, comentarios y PR; genera un evento normalizado y envía POST al router central.
+- `conector/bus/CONTRATO_EVENTOS_V1.md`: contrato de recepción durable, ACK, deduplicación, reintentos y reparto por agente.
+- `conversacion/CONTINUIDAD_Y_MEMORIA_COMPARTIDA.md`: diario append-only, estado global, decisiones y protocolo de inicio de cada agente.
+
+**Condición de activación:** configurar en GitHub Actions los secretos `AGENT_CALLBACK_URL` y `AGENT_CALLBACK_TOKEN`, apuntando al receptor persistente. Hasta que existan y el receptor confirme 2xx, el workflow conserva eventos como artifacts y avisa que no hubo callback. El workflow está escrito en la rama; todavía no está activo en `main` porque el PR no se ha fusionado.
+
+La transcripción de esta conversación de ChatGPT no se exporta automáticamente desde el chat al repositorio. Para conseguir integración turno a turno hace falta que el cliente de conversación publique cada turno al endpoint de ingesta. El protocolo y el destino quedan definidos; no se afirma una conexión que aún no existe.
