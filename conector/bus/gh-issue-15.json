@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-15",
+  "issue": 15,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/15",
+  "fecha": "2026-11-08T22:22:48Z",
+  "version": 6,
+  "de": "Grok",
+  "tipo": "hecho",
+  "mensaje": "Prueba de emisión. Conector GitHub operativo",
+  "transporte": "github-issues"
+}
