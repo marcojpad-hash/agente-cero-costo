@@ -1,0 +1,94 @@
+name: Agent callback bus
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+    paths-ignore:
+      - ".github/workflows/agent-callback.yml"
+  issues:
+    types: [opened, edited, labeled]
+  issue_comment:
+    types: [created, edited]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      event_type:
+        description: Event type for a manual agent wake-up
+        required: true
+        default: manual_wakeup
+      message:
+        description: Optional instruction or context
+        required: false
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: agent-callback-${{ github.event.repository.full_name }}
+  cancel-in-progress: false
+
+jobs:
+  notify-agents:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build event envelope
+        id: envelope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action || '' }}
+          REPOSITORY: ${{ github.event.repository.full_name }}
+          REF: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          EVENT_JSON: ${{ toJSON(github.event) }}
+          MANUAL_TYPE: ${{ inputs.event_type || '' }}
+          MANUAL_MESSAGE: ${{ inputs.message || '' }}
+        run: |
+          python - <<'PY'
+          import json, os, uuid, datetime
+          event = {
+            "schema": "agent-bus.event.v1",
+            "event_id": str(uuid.uuid4()),
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "source": "github",
+            "event_name": os.environ["EVENT_NAME"],
+            "action": os.environ["EVENT_ACTION"],
+            "repository": os.environ["REPOSITORY"],
+            "ref": os.environ["REF"],
+            "commit_sha": os.environ["SHA"],
+            "actor": os.environ["ACTOR"],
+            "manual_type": os.environ["MANUAL_TYPE"],
+            "manual_message": os.environ["MANUAL_MESSAGE"],
+            "payload": json.loads(os.environ["EVENT_JSON"])
+          }
+          with open("agent-event.json", "w", encoding="utf-8") as f:
+            json.dump(event, f, ensure_ascii=False, indent=2)
+          PY
+
+      - name: Notify central router immediately
+        env:
+          CALLBACK_URL: ${{ secrets.AGENT_CALLBACK_URL }}
+          CALLBACK_TOKEN: ${{ secrets.AGENT_CALLBACK_TOKEN }}
+        run: |
+          if [ -z "$CALLBACK_URL" ] || [ -z "$CALLBACK_TOKEN" ]; then
+            echo "::notice::Callback not sent: configure AGENT_CALLBACK_URL and AGENT_CALLBACK_TOKEN repository secrets."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error \
+            --retry 3 --retry-delay 2 --max-time 20 \
+            -X POST "$CALLBACK_URL" \
+            -H "Authorization: Bearer $CALLBACK_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary @agent-event.json
+
+      - name: Preserve event as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-event-${{ github.run_id }}-${{ github.run_attempt }}
+          path: agent-event.json
+          retention-days: 30
