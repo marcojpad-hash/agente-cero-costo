@@ -2,7 +2,7 @@
 
 Versión: 0.1
 
-Generado: 2026-11-08 04:45
+Generado: 2026-11-08 04:48
 
 Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualquier sesión, de cualquier empresa, puede cargarlo y tener la misma información.
 
@@ -24,6 +24,9 @@ Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualqu
 - ./avisos/ULTIMA_ACTUALIZACION.md
 - ./avisos/VERSION
 - ./avisos/avisar.py
+- ./conector/README.md
+- ./conector/emitir.py
+- ./conector/recibir.py
 - ./dsh/DSH_CERO_COSTO.md
 - ./dsh/DSH_PRUEBA_HUMO.md
 - ./dsh/settings-groq-directo.yaml

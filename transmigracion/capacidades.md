@@ -41,6 +41,19 @@ se corre y qué no puede.
   orquestador, no lo elimina; el código se enruta a dsh pero no se
   ejecuta desde aquí.
 
+## Conector (macho-hembra)
+
+- **Conector** (`conector/emitir.py` y `conector/recibir.py`): el par
+  receptor-enunciador. Cuando un modelo anuncia algo, los otros lo
+  pueden recibir, y viceversa. `emitir.py` escribe un evento en el bus
+  (`conector/bus/`) y avisa por el callback; `recibir.py` lee el bus y
+  entrega solo los eventos nuevos según su watermark local. El par es
+  reversible: cualquier modelo puede emitir o recibir. El bus viaja
+  con el repo; el watermark es local de cada receptor y nunca va en
+  el repo. Uso: `python3 emitir.py "mensaje" --tipo indicacion`,
+  `python3 recibir.py`. Límite: el receptor entrega los eventos, no
+  los ejecuta; el bus se ve después de actualizar el repo.
+
 ## Avisos
 
 - **Avisos** (`avisos/avisar.py`): el callback de actualización.
