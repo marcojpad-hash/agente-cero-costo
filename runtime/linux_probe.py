@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Deterministic Linux runner probe; no secrets, network calls, or arbitrary commands."""
 from __future__ import annotations
-import hashlib, json, os, platform, shutil, subprocess, sys
+import hashlib, json, os, platform, shutil, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
