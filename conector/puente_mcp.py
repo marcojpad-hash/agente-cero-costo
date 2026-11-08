@@ -59,6 +59,16 @@ def get_bootstrap_context(agent_id:str,context_key:str="global",limit:int=50)->d
     return bus.bootstrap(agent_id,context_key,limit)
 
 @mcp.tool()
+def ingest_git_event(event:dict)->dict:
+    """Import one public conector/bus JSON event; message_id deduplicates repeat imports."""
+    return bus.ingest_git_event(event)
+
+@mcp.tool()
+def ingest_public_state(state:dict)->dict:
+    """Import conector/estado.json as the versioned public continuity snapshot."""
+    return bus.ingest_public_state(state)
+
+@mcp.tool()
 def ingest_emit_block(block_text:str)->dict:
     """Validate and ingest a pasted [EMITIR] block as a shared next-activation event."""
     return bus.ingest_emit_block(block_text)
