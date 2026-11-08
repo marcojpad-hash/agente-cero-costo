@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "probe": "runtime-linux-smoke-v1",
+  "timestamp_utc": "2026-11-08T19:23:06.660722+00:00",
+  "workflow_run_id": 42514758321,
+  "workflow_run_url": "https://github.com/marcojpad-hash/agente-cero-costo/actions/runs/42514758321",
+  "commit": "fcf4faf714a88c879e6bdef01052b897c5dc16ac",
+  "runner": {
+    "image": "ubuntu-24.04",
+    "os": "Ubuntu 24.04.5 LTS",
+    "kernel": "Linux 7.0.0-1017-azure-x86_64",
+    "region": "chilecentral",
+    "cloud": "Azure",
+    "cpu_count": 4,
+    "host": "runnervm7aw5e",
+    "python": "3.12.16"
+  },
+  "memory_bytes": {
+    "total": 16760344576,
+    "available": 15798530048,
+    "free": 15177658368
+  },
+  "disk_bytes": {
+    "total": 154894188544,
+    "free": 92125200384
+  },
+  "repeatability": {
+    "pass": true,
+    "sha256": "5288a09b87518e21e896d41d696226cf38ae65f0d7ac026ca1c7bc2aad8ecb12"
+  },
+  "artifact": {
+    "id": 13630364569,
+    "name": "runtime-linux-probe-42514758321",
+    "url": "https://github.com/marcojpad-hash/agente-cero-costo/actions/runs/42514758321/artifacts/13630364569",
+    "expires_at": "2026-12-08T19:23:06Z",
+    "sha256_zip": "95239947b52d72a248e9a1b4b94a600599f5eea3bf05c9e25a7bf4e9873e491a"
+  },
+  "verification": {
+    "job": "Measure real Linux runner resources",
+    "conclusion": "success",
+    "steps_all_success": true
+  }
+}
