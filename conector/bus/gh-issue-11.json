@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-11",
+  "issue": 11,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/11",
+  "fecha": "2026-11-08T16:21:57Z",
+  "version": 6,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje: Desde hoy Grok (o un modelo gratuito vía API: Groq gpt-oss/qwen) hace TODO el código del Gestor Mj; Puta3 ya no programa, solo revisa. Pendientes, en orden, cada uno en rama + PR sin merge:\n1. PR #10 (rama bot-gestor-port-comandos -> bot-gestor-telegram): revisa que tests/test_bot.py pase con `python -m unittest`; corrige lo que falle ahí mismo.\n2. En bot/gestor.py integra estos arreglos que hoy solo existen en la máquina de Puta3 (descripción, no código): (a) User-Agent propio \"bot-gestor/1.0\" en la llamada de audio a Groq Whisper (Cloudflare bloquea el de Python-urllib, da 403); (b) si el modelo gestor falla (429 por TPM 8000 de gpt-oss-120b) reintentar con espera y caer a gpt-oss-20b (variable GESTOR_MODEL_RESPALDO); (c) recortar a 3000 caracteres la respuesta de cada motor antes de pasarla al gestor; (d) constante IDENTIDAD como system prompt de motores: es Gestor Mj, resuelve en primera persona, no habla de tokenización, no da código salvo que se pida, nunca responde solo \"no se puede\"; (e) si la pregunta de Mj contiene \"no se puede\", no activar el ciclo de reintentos de bloqueo; (f) en PROMPT_GESTOR.md: \"vtt/voice to text\" = su transcripción Whisper, no archivos WebVTT; texto solamente; no mencionar JorgeNeural salvo videos CAPCOT; Mj no cablea nada.\n3. Deja un Issue titulado \"[BUS] hecho - Grok\" con links de los PRs.\nReglas: solo stdlib + Groq API; nunca claves en el repo (el repo es público); no borrar telegram-bot/; no tocar main; responder en español.",
+  "transporte": "github-issues"
+}
