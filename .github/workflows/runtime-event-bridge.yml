@@ -30,8 +30,6 @@ jobs:
       - name: Forward verified GitHub event to Runtime
         env:
           RUNTIME_BASE_URL: ${{ vars.RUNTIME_BASE_URL }}
-          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
-          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_ACTION: ${{ github.event.action || '' }}
           REPOSITORY: ${{ github.repository }}
