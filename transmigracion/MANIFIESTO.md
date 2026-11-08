@@ -2,7 +2,7 @@
 
 Versión: 0.1
 
-Generado: 2026-11-08 04:57
+Generado: 2026-11-08 05:17
 
 Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualquier sesión, de cualquier empresa, puede cargarlo y tener la misma información.
 
@@ -28,6 +28,8 @@ Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualqu
 - ./conector/README.md
 - ./conector/aplicar.py
 - ./conector/bus/20261108-044852-742005.json
+- ./conector/bus/20261108-045705-266798.json
+- ./conector/bus/gh-issue-4.json
 - ./conector/emitir-bloque.md
 - ./conector/emitir.py
 - ./conector/estado.json

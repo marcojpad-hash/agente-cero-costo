@@ -1,12 +1,12 @@
 # Estado vigente del stack
 
-Versión: 4 — Fecha: 2026-11-08 05:06
+Versión: 5 — Fecha: 2026-11-08 05:17
 
-Última actualización: 2026-11-08 04:57 (v4) — El foquito está en la URL pública del estado: cualquier modelo con navegación lo lee.
+Última actualización: 2026-11-08 05:17 (v5) — PR #2 integrado (merge 8cd83be1) y emisión real probada: el Issue #4 se convirtió en gh-issue-4.json en el bus. El túnel de Issues está vivo.
 
 Pendientes en el tablero CAPCOT: 5
 
-Eventos en el bus: 2
+Eventos en el bus: 3
 
 ## Para el modelo que lee esto
 

@@ -1,9 +1,9 @@
 {
-  "version": 4,
-  "fecha": "2026-11-08 05:06",
-  "ultima_actualizacion": "2026-11-08 04:57 (v4) — El foquito está en la URL pública del estado: cualquier modelo con navegación lo lee.",
+  "version": 5,
+  "fecha": "2026-11-08 05:17",
+  "ultima_actualizacion": "2026-11-08 05:17 (v5) — PR #2 integrado (merge 8cd83be1) y emisión real probada: el Issue #4 se convirtió en gh-issue-4.json en el bus. El túnel de Issues está vivo.",
   "pendientes_tablero_capcot": 5,
-  "eventos_bus": 2,
+  "eventos_bus": 3,
   "estado_md": "https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/ESTADO.md",
   "como_emitir": "https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/emitir-bloque.md",
   "memoria_compartida": "https://raw.githubusercontent.com/marcojpad-hash/memoria-compartida/main/INDICE.md"
