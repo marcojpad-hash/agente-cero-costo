@@ -1,0 +1,37 @@
+services:
+  executor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openai-agent-executor
+    restart: unless-stopped
+    init: true
+    env_file:
+      - .env
+    environment:
+      CODEX_API_KEY: ${CODEX_API_KEY:?Set CODEX_API_KEY in .env}
+      CODEX_REMOTE_URL: ${CODEX_REMOTE_URL:?Set CODEX_REMOTE_URL in .env}
+      CODEX_ENVIRONMENT_ID: ${CODEX_ENVIRONMENT_ID:?Set CODEX_ENVIRONMENT_ID in .env}
+    volumes:
+      - workspace:/workspace
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+      - /home/codex/.cache:size=512m,mode=0750
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 256
+    mem_limit: 3g
+    cpus: 2
+    networks:
+      - executor_net
+
+volumes:
+  workspace:
+    driver: local
+
+networks:
+  executor_net:
+    driver: bridge
