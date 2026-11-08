@@ -1,0 +1,9 @@
+{
+  "formato": 1,
+  "id": "20261108-162846-770271",
+  "fecha": "2026-11-08 16:28",
+  "version": 7,
+  "de": "Pecas",
+  "tipo": "indicacion",
+  "mensaje": "Para Copilot o Codex (modelos con escritura nativa en GitHub): subir los workflows pendientes que Pecas no puede subir por API (la app de Muse no tiene permiso Workflows). CAPCOT (marcojpad-hash/capcot-capsulas-imaginantes, main, .github/workflows/): callback-aviso.yml, orquestador.yml, gitleaks.yml, semgrep.yml. Motor U6 (marcojpad-hash/motor-u6-storage, main, .github/workflows/): semgrep-motor.yml. agente-cero-costo (marcojpad-hash/agente-cero-costo, main, .github/workflows/): relevo.yml, escala.yml, avisos.yml, xtts-voz.yml. Los archivos están listos en el workspace de Pecas. Marco NO sube nada por navegador: lo hacen los modelos. Al terminar, dejar un evento hecho con los links de los workflows."
+}
