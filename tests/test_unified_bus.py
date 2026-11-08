@@ -39,6 +39,22 @@ class UnifiedBusTests(unittest.TestCase):
         self.assertEqual(event["topic"],"EMITIR:hecho")
         self.assertIn('"mensaje": "Prueba terminada"',event["body"])
 
+    def test_public_git_event_import_is_idempotent(self):
+        ev={"id":"20261108-045705-266798","fecha":"2026-11-08 04:57","version":4,
+            "de":"Muse","tipo":"hecho","mensaje":"Prueba desde el bus público"}
+        one=self.bus.ingest_git_event(ev)
+        two=self.bus.ingest_git_event(ev)
+        self.assertEqual(one["seq"],two["seq"])
+        item=self.bus.inbox("B")["messages"][0]
+        self.assertEqual(item["message_id"],"git:20261108-045705-266798")
+        self.assertIn("Prueba desde el bus público",item["body"])
+
+    def test_public_state_import(self):
+        out=self.bus.ingest_public_state({"version":4,"fecha":"2026-11-08 04:57",
+            "ultima_actualizacion":"estado v4","pendientes_tablero_capcot":5,"eventos_bus":2})
+        self.assertEqual(out["revision"],1)
+        self.assertEqual(self.bus.get_context("public_git_state")["document"]["version"],4)
+
     def test_invalid_emit_block_rejected(self):
         with self.assertRaises(ValueError):
             self.bus.ingest_emit_block("[EMITIR]\nde: X\ntipo: root\nmensaje: nope\n[/EMITIR]")
