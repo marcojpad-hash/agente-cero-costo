@@ -1,0 +1,79 @@
+name: Runtime event bridge
+
+on:
+  push:
+    branches: [main]
+  issues:
+    types: [opened, edited, closed, labeled]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: runtime-event-bridge-${{ github.event_name }}-${{ github.event.issue.number || github.event.pull_request.number || github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  bridge:
+    # [BUS] Issues are already the durable agent bus; do not echo them back as
+    # Telegram notifications. Comments on [BUS] issues are ignored for the same reason.
+    if: ${{ !(github.event_name == 'issues' && startsWith(github.event.issue.title, '[BUS]')) && !(github.event_name == 'issue_comment' && startsWith(github.event.issue.title, '[BUS]')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Forward verified GitHub event to Runtime
+        env:
+          RUNTIME_BASE_URL: ${{ vars.RUNTIME_BASE_URL }}
+          ACTIONS_ID_TOKEN_REQUEST_URL: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action || '' }}
+          REPOSITORY: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          RUN_ID: ${{ github.run_id }}
+          ISSUE_TITLE: ${{ github.event.issue.title || github.event.pull_request.title || '' }}
+          ISSUE_URL: ${{ github.event.issue.html_url || github.event.pull_request.html_url || '' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${RUNTIME_BASE_URL}" ]; then
+            echo "::notice::Runtime not called: add repository variable RUNTIME_BASE_URL after the Runtime app is published."
+            exit 0
+          fi
+
+          OIDC_TOKEN="$(curl --fail --silent --show-error \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=runtime-orquestador" | jq -r '.value')"
+
+          if [ -z "${OIDC_TOKEN}" ] || [ "${OIDC_TOKEN}" = "null" ]; then
+            echo "::error::GitHub did not issue an OIDC token."
+            exit 1
+          fi
+
+          EVENT_KEY="${RUN_ID}:${EVENT_NAME}"
+          PAYLOAD="$(jq -n \
+            --arg event_key "${EVENT_KEY}" \
+            --arg event_name "${EVENT_NAME}" \
+            --arg action "${EVENT_ACTION}" \
+            --arg repository "${REPOSITORY}" \
+            --arg ref "${REF}" \
+            --arg sha "${SHA}" \
+            --arg actor "${ACTOR}" \
+            --arg title "${ISSUE_TITLE}" \
+            --arg url "${ISSUE_URL}" \
+            --arg run_id "${RUN_ID}" \
+            '{event_key:$event_key,event_name:$event_name,action:$action,repository:$repository,ref:$ref,sha:$sha,actor:$actor,title:$title,url:$url,run_id:$run_id}')"
+
+          curl --fail-with-body --silent --show-error \
+            --max-time 20 \
+            -X POST "${RUNTIME_BASE_URL%/}/_api/runtime/events" \
+            -H "Authorization: Bearer ${OIDC_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "${PAYLOAD}"
