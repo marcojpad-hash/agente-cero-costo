@@ -41,6 +41,22 @@ se corre y qué no puede.
   orquestador, no lo elimina; el código se enruta a dsh pero no se
   ejecuta desde aquí.
 
+## Avisos
+
+- **Avisos** (`avisos/avisar.py`): el callback de actualización.
+  Cada indicación o cambio de información genera un aviso: se escribe
+  en `avisos/ACTUALIZACIONES.md`, se sube `avisos/VERSION` (el
+  watermark) y se regenera el paquete de transmigración. Los agentes
+  programados (orquestador diario, relevo cada hora) lo ven en su
+  siguiente corrida; la sanguijuela adjunta la versión + las últimas
+  actualizaciones a cada encargo automáticamente. Uso:
+  `python3 avisar.py "mensaje"`. Workflow `avisos.yml` listo en
+  `~/workspace/agente-cero-costo-cableado/.github/workflows/` (va por
+  navegador; publica la actualización como issue con etiqueta
+  `aviso`). Límite: los modelos de API no tienen buzón, su aviso es
+  el contexto adjunto; el aviso no es instantáneo para los agentes
+  programados.
+
 ## Leer lo que no se puede leer
 
 - **Puente de lectura** (`puente-lectura/leer.py`): trae el texto por

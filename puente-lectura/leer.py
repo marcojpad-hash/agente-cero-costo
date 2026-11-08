@@ -132,7 +132,7 @@ def llamar(cliente, args, prompt):
     return r.stdout.strip()
 
 
-def leer_url(url):
+def leer_url(url, contexto=None):
     print(f"\n## {url}", flush=True)
     try:
         texto, ruta = fetch_github(url)
@@ -144,12 +144,13 @@ def leer_url(url):
         texto = texto[:MAX_CHARS]
     print(f"Texto traído por {ruta} ({len(texto)} caracteres"
           + (", truncado" if truncado else "") + ")", flush=True)
+    extraer = (contexto + "\n\n" if contexto else "") + EXTRAER + texto
     extracciones = {}
     try:
         extracciones["Gemini"] = llamar(
             GEMINI_CLIENT,
             ["generate", "--model", "gemini-3-flash-preview"],
-            EXTRAER + texto,
+            extraer,
         )
         print("Gemini leyó.", flush=True)
     except Exception as exc:
@@ -160,7 +161,7 @@ def leer_url(url):
         extracciones["Groq"] = llamar(
             GROQ_CLIENT,
             ["chat", "--model", "openai/gpt-oss-20b"],
-            EXTRAER + texto,
+            extraer,
         )
         print("Groq leyó.", flush=True)
     except Exception as exc:
@@ -194,10 +195,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("urls", nargs="+")
     parser.add_argument("--salida", default=None)
+    parser.add_argument("--contexto", default=None,
+                        help="Contexto vigente que se antepone a la lectura")
     args = parser.parse_args()
     notas = []
     for url in args.urls:
-        notas.append(leer_url(url))
+        notas.append(leer_url(url, args.contexto))
     salida = "# Lecturas por el puente\n\n" + "\n".join(notas)
     if args.salida:
         open(args.salida, "w", encoding="utf-8").write(salida)

@@ -28,6 +28,28 @@ import sys
 GEMINI_CLIENT = "/home/hatch/workspace/custom-connectors/custom.gemini/bin/client.py"
 GROQ_CLIENT = "/home/hatch/workspace/custom-connectors/custom.groq/bin/client.py"
 LEER = "/home/hatch/workspace/agente-cero-costo/puente-lectura/leer.py"
+AVISOS = "/home/hatch/workspace/agente-cero-costo/avisos"
+MAX_AVISOS = 3
+
+
+def contexto_vigente():
+    """Versión + últimas actualizaciones, para que el encargo lleve el
+    contexto solo. Sin esto, el modelo adivina desde su conocimiento
+    (lección del 2026-11-08: Groq respondió genérica porque el encargo
+    no llevaba el contexto)."""
+    try:
+        version = open(f"{AVISOS}/VERSION", encoding="utf-8").read().strip()
+    except OSError:
+        version = "sin versión"
+    try:
+        lineas = [l for l in open(f"{AVISOS}/ACTUALIZACIONES.md",
+                                   encoding="utf-8").read().splitlines()
+                  if l.startswith("- ")]
+    except OSError:
+        lineas = []
+    ultimas = "\n".join(lineas[-MAX_AVISOS:]) or "Sin actualizaciones registradas."
+    return (f"[Contexto vigente — versión {version}. Últimas "
+            f"actualizaciones:\n{ultimas}]")
 
 RUTAS = {
     "texto": ("Groq gpt-oss-20b", "texto corto, razonamiento, plan"),
@@ -66,6 +88,8 @@ def main():
     args = parser.parse_args()
     modelo, para = RUTAS[args.tipo]
     print(f"Enrutado: {modelo} ({para})")
+    contexto = contexto_vigente()
+    print(f"Contexto adjunto: {contexto.splitlines()[0]}")
     if args.solo_enrutar:
         if args.tipo == "codigo":
             print("Comando: cd ~/workspace/dsh-prueba && "
@@ -83,14 +107,14 @@ def main():
     if args.tipo == "texto":
         respuesta = llamar(GROQ_CLIENT,
                            ["chat", "--model", "openai/gpt-oss-20b"],
-                           args.tarea)
+                           contexto + "\n\n" + args.tarea)
     elif args.tipo == "texto-largo":
         respuesta = llamar(GEMINI_CLIENT,
                            ["generate", "--model", "gemini-3-flash-preview"],
-                           args.tarea)
+                           contexto + "\n\n" + args.tarea)
     elif args.tipo == "lectura":
         r = subprocess.run(
-            [sys.executable, LEER, args.tarea],
+            [sys.executable, LEER, args.tarea, "--contexto", contexto],
             capture_output=True, text=True, timeout=900)
         if r.returncode != 0:
             raise RuntimeError((r.stderr or r.stdout).strip()[:300])

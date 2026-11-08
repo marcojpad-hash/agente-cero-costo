@@ -2,7 +2,7 @@
 
 Versión: 0.1
 
-Generado: 2026-11-08 04:34
+Generado: 2026-11-08 04:45
 
 Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualquier sesión, de cualquier empresa, puede cargarlo y tener la misma información.
 
@@ -19,6 +19,11 @@ Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualqu
 ## Herramientas del repo (inventario)
 
 - ./README.md
+- ./avisos/ACTUALIZACIONES.md
+- ./avisos/README.md
+- ./avisos/ULTIMA_ACTUALIZACION.md
+- ./avisos/VERSION
+- ./avisos/avisar.py
 - ./dsh/DSH_CERO_COSTO.md
 - ./dsh/DSH_PRUEBA_HUMO.md
 - ./dsh/settings-groq-directo.yaml
@@ -35,6 +40,9 @@ Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualqu
 - ./puente-lectura/README.md
 - ./puente-lectura/lecturas-pendientes.md
 - ./puente-lectura/leer.py
+- ./sanguijuela/PROTOCOLO_SANGUIJUELA.md
+- ./sanguijuela/README.md
+- ./sanguijuela/sanguijuela.py
 
 ## Fuentes
 
