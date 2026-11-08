@@ -24,7 +24,7 @@ jobs:
     # [BUS] Issues are already the durable agent bus; do not echo them back as
     # Telegram notifications. Comments on [BUS] issues are ignored for the same reason.
     if: ${{ !(github.event_name == 'issues' && startsWith(github.event.issue.title, '[BUS]')) && !(github.event_name == 'issue_comment' && startsWith(github.event.issue.title, '[BUS]')) }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 3
     steps:
       - name: Forward verified GitHub event to Runtime
