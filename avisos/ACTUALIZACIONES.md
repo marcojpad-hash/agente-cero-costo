@@ -7,3 +7,4 @@ modelos aunque no estén en la interacción directa.
 - 2026-11-08 04:47 (v1) — Se crea el sistema de avisos: cada indicación o cambio de información genera un aviso con versión, y la sanguijuela lo adjunta automáticamente a cada encargo. Lección que lo motiva: la sanguijuela respondió genérica porque el encargo no llevaba el contexto; desde ahora el contexto viaja solo.
 - 2026-11-08 04:45 (v2) — La sanguijuela ya adjunta sola el contexto vigente (versión + últimas actualizaciones) a cada encargo; el puente de lectura acepta --contexto. Lección: el encargo debe llevar el contexto adentro.
 - 2026-11-08 04:48 (v3) — Se creó el conector macho-hembra: emitir.py anuncia y recibir.py recibe, y viceversa.
+- 2026-11-08 04:57 (v4) — El foquito está en la URL pública del estado: cualquier modelo con navegación lo lee.

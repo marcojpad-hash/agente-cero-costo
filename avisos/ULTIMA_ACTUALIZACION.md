@@ -1,9 +1,9 @@
 # Última actualización
 
-Versión: 3
+Versión: 4
 
-Fecha: 2026-11-08 04:48
+Fecha: 2026-11-08 04:57
 
-Se creó el conector macho-hembra: emitir.py anuncia y recibir.py recibe, y viceversa.
+El foquito está en la URL pública del estado: cualquier modelo con navegación lo lee.
 
 Registro completo: ACTUALIZACIONES.md

@@ -36,6 +36,7 @@ VERSION_F = os.path.join(HERE, "VERSION")
 LOG_F = os.path.join(HERE, "ACTUALIZACIONES.md")
 ULTIMA_F = os.path.join(HERE, "ULTIMA_ACTUALIZACION.md")
 EMPAQUETAR = os.path.join(REPO, "transmigracion", "empaquetar.py")
+PUBLICAR = os.path.join(REPO, "conector", "publicar.py")
 
 
 def leer_version():
@@ -62,9 +63,12 @@ def main():
                 f"Registro completo: ACTUALIZACIONES.md\n")
     r = subprocess.run([sys.executable, EMPAQUETAR],
                        capture_output=True, text=True)
+    p = subprocess.run([sys.executable, PUBLICAR],
+                       capture_output=True, text=True)
     print(f"Aviso v{version} registrado: {mensaje}")
     print(f"Canales: registro en el repo, VERSION={version}, "
-          f"transmigración regenerada ({r.stdout.strip().splitlines()[0] if r.stdout else 'sin salida'}).")
+          f"transmigración regenerada ({r.stdout.strip().splitlines()[0] if r.stdout else 'sin salida'}), "
+          f"estado público regenerado ({p.stdout.strip().splitlines()[0] if p.stdout else 'sin salida'}).")
     print("Lo verán en su siguiente corrida: orquestador diario, relevo "
           "cada hora, y la sanguijuela lo adjunta a cada encargo.")
 

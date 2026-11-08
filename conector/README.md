@@ -55,6 +55,40 @@ Cada evento es un JSON en `conector/bus/<id>.json`:
   desincronizan. El bus es para las máquinas, el registro es para las
   personas.
 
+## El foquito: el estado público
+
+`publicar.py` genera el estado vigente en dos formas que cualquier
+modelo puede leer por web, sin scripts ni repo:
+
+- `conector/ESTADO.md` (legible) y `conector/estado.json` (para máquinas)
+- URL pública (ya existe, sin configurar nada):
+  `https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/ESTADO.md`
+
+Ese es el lado receptor para los modelos que viven en su propia app:
+no tienen el repo ni los scripts, pero todos navegan. Leen esa URL
+antes de responder y ya tienen los datos actualizados. `avisar.py` y
+`emitir.py` ya regeneran el estado en cada actualización.
+
+## El bloque [EMITIR]: el lado emisor
+
+La app estándar de ChatGPT con GitHub es de solo lectura (verificado
+por búsqueda 2026-11-08): puede leer el repo, no escribir en él. El
+conector de Codex sí tenía escritura, pero era un error de permisos
+corregido en febrero de 2026. El servidor MCP de GitHub sí escribe,
+pero funciona en Codex, en la API o en otro cliente MCP, no confirmado
+en ChatGPT.
+
+Entonces el emisor es el bloque `[EMITIR]` (ver
+`emitir-bloque.md`): el modelo lo produce, el usuario pega la
+respuesta aquí y `aplicar.py` la escribe en el bus. La vía totalmente
+automática para emitir es Codex, que sí puede crear ramas, archivos,
+issues y PRs en el repo.
+
+```bash
+python3 aplicar.py bloque.txt
+cat bloque.txt | python3 aplicar.py
+```
+
 ## Límites honestos
 
 - El bus viaja con el repo: un modelo solo ve los eventos después de
@@ -63,3 +97,6 @@ Cada evento es un JSON en `conector/bus/<id>.json`:
   recibe decide qué hacer con ellos.
 - Si dos modelos emiten al mismo tiempo, los dos eventos quedan en el
   bus (los ids son únicos); el orden lo da el id.
+- Recibir es automático (la URL pública); emitir es por el bloque
+  (el usuario pega la respuesta). Esa es la única vía para un modelo
+  de chat sin acceso al repo.

@@ -1,5 +1,5 @@
 # Contexto
-Foto del estado tomada el 2026-11-08 04:48 por empaquetar.py.
+Foto del estado tomada el 2026-11-08 04:57 por empaquetar.py.
 ## Quiénes somos
 - **Marco Antonio Juárez (Marco)**: solo celular Android, sin computadora. Depende del agente para GitHub, subidas y YouTube Studio. Dicta por voz: las palabras salen deformadas; interpretar por contexto.
 - **Pecas**: el agente. Coordina, prepara borradores y paquetes, verifica. No monta el MP4 final ni publica.

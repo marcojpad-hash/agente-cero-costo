@@ -53,6 +53,15 @@ se corre y qué no puede.
   el repo. Uso: `python3 emitir.py "mensaje" --tipo indicacion`,
   `python3 recibir.py`. Límite: el receptor entrega los eventos, no
   los ejecuta; el bus se ve después de actualizar el repo.
+- **El foquito** (`conector/publicar.py`): genera el estado vigente
+  en `conector/ESTADO.md` y `conector/estado.json`, legibles por web
+  en la URL cruda de GitHub sin configurar nada. Ese es el lado
+  receptor para los modelos que viven en su propia app (todos
+  navegan): leen la URL y ya tienen los datos. El lado emisor es el
+  bloque `[EMITIR]` (`conector/emitir-bloque.md`): el modelo lo
+  produce, el usuario pega la respuesta y `conector/aplicar.py` la
+  escribe en el bus. Verificado: la app estándar de ChatGPT con
+  GitHub es de solo lectura; la vía automática para emitir es Codex.
 
 ## Avisos
 
