@@ -1,0 +1,15 @@
+[Unit]
+Description=Bot de Telegram del equipo agente-cero-costo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/workspace/agente-cero-costo/telegram-bot
+ExecStart=/bin/bash run.sh
+Restart=on-failure
+RestartSec=10
+EnvironmentFile=%h/.config/telegram-bot/token.env
+
+[Install]
+WantedBy=default.target
