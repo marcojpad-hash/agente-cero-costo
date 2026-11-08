@@ -6,6 +6,13 @@ nuevos desde la última lectura, usando un watermark local (qué ya vio
 este receptor). Después de entregarlos, guarda el watermark nuevo.
 Con --solo-ver no lo guarda: solo mira qué hay nuevo.
 
+El watermark es un conjunto de ids vistos (no un solo último id):
+el bus mezcla dos formatos de id (los locales `20261108-...` de
+emitir.py y los de GitHub `gh-issue-N` del workflow
+github-native-agent-bus.yml), y comparar por orden alfabético entre
+formatos se salta eventos. Con el conjunto, cada evento se entrega
+una sola vez, venga del transporte que venga.
+
 El watermark es local de cada máquina/receptor (por defecto
 ~/.cache/agente-cero-costo/visto.json) y nunca va en el repo: cada
 modelo tiene su propio "qué ya vi". El bus sí es compartido (viaja
@@ -25,13 +32,29 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUS = os.path.join(HERE, "bus")
 VISTO_DEF = os.path.expanduser("~/.cache/agente-cero-costo/visto.json")
+MAX_VISTOS = 500
 
 
-def cargar_visto(ruta):
+def cargar_vistos(ruta):
+    """Conjunto de ids ya vistos. Acepta el formato viejo
+    {"ultimo_id": ...} y lo migra a un conjunto de un elemento."""
     try:
-        return json.load(open(ruta, encoding="utf-8")).get("ultimo_id", "")
+        data = json.load(open(ruta, encoding="utf-8"))
     except (OSError, ValueError, AttributeError):
-        return ""
+        return set()
+    if isinstance(data, dict):
+        if isinstance(data.get("vistos"), list):
+            return set(data["vistos"])
+        if data.get("ultimo_id"):
+            return {data["ultimo_id"]}
+    return set()
+
+
+def guardar_vistos(ruta, vistos):
+    os.makedirs(os.path.dirname(ruta), exist_ok=True)
+    recorte = sorted(vistos)[-MAX_VISTOS:]
+    with open(ruta, "w", encoding="utf-8") as f:
+        json.dump({"vistos": recorte}, f)
 
 
 def main():
@@ -39,7 +62,7 @@ def main():
     parser.add_argument("--visto", default=VISTO_DEF)
     parser.add_argument("--solo-ver", action="store_true")
     args = parser.parse_args()
-    ultimo = cargar_visto(args.visto)
+    vistos = cargar_vistos(args.visto)
     eventos = []
     if os.path.isdir(BUS):
         for nombre in sorted(os.listdir(BUS)):
@@ -50,7 +73,7 @@ def main():
                                     encoding="utf-8"))
             except (OSError, ValueError):
                 continue
-            if ev.get("id", "") > ultimo:
+            if ev.get("id") and ev["id"] not in vistos:
                 eventos.append(ev)
     if not eventos:
         print("Sin novedades: no hay eventos nuevos en el bus.")
@@ -60,10 +83,9 @@ def main():
         print(f"- {ev.get('fecha')} (v{ev.get('version')}, "
               f"{ev.get('tipo')}, de {ev.get('de')}): {ev.get('mensaje')}")
     if not args.solo_ver:
-        os.makedirs(os.path.dirname(args.visto), exist_ok=True)
-        with open(args.visto, "w", encoding="utf-8") as f:
-            json.dump({"ultimo_id": eventos[-1]["id"]}, f)
-        print(f"Watermark guardado: {eventos[-1]['id']}")
+        vistos.update(ev["id"] for ev in eventos)
+        guardar_vistos(args.visto, vistos)
+        print(f"Watermark guardado: {len(vistos)} eventos vistos.")
 
 
 if __name__ == "__main__":

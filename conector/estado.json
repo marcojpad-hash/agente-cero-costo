@@ -1,9 +1,10 @@
 {
   "version": 4,
-  "fecha": "2026-11-08 04:57",
+  "fecha": "2026-11-08 05:06",
   "ultima_actualizacion": "2026-11-08 04:57 (v4) — El foquito está en la URL pública del estado: cualquier modelo con navegación lo lee.",
   "pendientes_tablero_capcot": 5,
   "eventos_bus": 2,
   "estado_md": "https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/ESTADO.md",
-  "como_emitir": "https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/emitir-bloque.md"
+  "como_emitir": "https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/emitir-bloque.md",
+  "memoria_compartida": "https://raw.githubusercontent.com/marcojpad-hash/memoria-compartida/main/INDICE.md"
 }
