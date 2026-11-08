@@ -30,6 +30,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 BASE_RAW = ("https://raw.githubusercontent.com/marcojpad-hash/"
             "agente-cero-costo/main/conector")
+MEMORIA_RAW = ("https://raw.githubusercontent.com/marcojpad-hash/"
+               "memoria-compartida/main/INDICE.md")
 
 
 def leer(path):
@@ -60,6 +62,7 @@ def main():
         "eventos_bus": n_bus,
         "estado_md": f"{BASE_RAW}/ESTADO.md",
         "como_emitir": f"{BASE_RAW}/emitir-bloque.md",
+        "memoria_compartida": MEMORIA_RAW,
     }
     with open(os.path.join(HERE, "estado.json"), "w",
               encoding="utf-8") as f:
@@ -75,7 +78,9 @@ def main():
               "vigente. Si tienes información nueva para el equipo, "
               "emítela con el bloque [EMITIR] (ver emitir-bloque.md en "
               "este mismo directorio) y el usuario la pegará en el "
-              "sistema.\n")
+              "sistema.\n\n")
+    md.append("Memoria compartida (hechos verificados, para no alucinar): "
+              f"{MEMORIA_RAW}\n")
     with open(os.path.join(HERE, "ESTADO.md"), "w", encoding="utf-8") as f:
         f.write("".join(md))
     print(f"Publicado: ESTADO.md y estado.json (v{version})")

@@ -41,6 +41,16 @@ se corre y qué no puede.
   orquestador, no lo elimina; el código se enruta a dsh pero no se
   ejecuta desde aquí.
 
+- **Memoria compartida** (marcojpad-hash/memoria-compartida, privado):
+  la memoria persistente y consistente de los modelos, para no
+  alucinar. Índice chiquito + hechos cortos verificados (proyectos,
+  decisiones, correcciones, tokens, estado, personas). No lleva
+  pláticas completas ni artefactos (esos viven en su repositorio).
+  Presupuesto: índice < 1 KB, cada archivo < 2 KB, total < 20 KB.
+  Se consulta leyendo el índice primero y solo los archivos que la
+  tarea necesita. URL del índice:
+  https://raw.githubusercontent.com/marcojpad-hash/memoria-compartida/main/INDICE.md
+
 ## Conector (macho-hembra)
 
 - **Conector** (`conector/emitir.py` y `conector/recibir.py`): el par

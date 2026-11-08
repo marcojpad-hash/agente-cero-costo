@@ -69,6 +69,10 @@ no tienen el repo ni los scripts, pero todos navegan. Leen esa URL
 antes de responder y ya tienen los datos actualizados. `avisar.py` y
 `emitir.py` ya regeneran el estado en cada actualización.
 
+La memoria compartida (hechos verificados, para no alucinar) está en
+el repo privado `memoria-compartida`, y el estado público la enlaza:
+`https://raw.githubusercontent.com/marcojpad-hash/memoria-compartida/main/INDICE.md`
+
 ## El bloque [EMITIR]: el lado emisor
 
 La app estándar de ChatGPT con GitHub es de solo lectura (verificado
