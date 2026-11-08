@@ -26,6 +26,21 @@ se corre y qué no puede.
   `~/workspace/orquestador-workflow/` (corre diario 07:00 CDMX +
   dispatch; va por navegador; necesita el secreto GROQ_API_KEY).
 
+## Sanguijuela
+
+- **Protocolo sanguijuela** (`sanguijuela/PROTOCOLO_SANGUIJUELA.md`
+  y `sanguijuela/sanguijuela.py`): el que orquesta no gasta sus
+  tokens. El trabajo pesado lo hacen los modelos gratuitos con sus
+  tokens (Groq gpt-oss-20b para texto corto, Gemini para contexto
+  grande, puente-lectura para leer lo que no se abre, dsh para
+  ejecutar) y las herramientas que ya existen (sus MCP, sus cableados)
+  se usan como rémora en vez de reconstruirlas. El orquestador solo
+  pone la capa fina: decidir, verificar, unificar. Uso:
+  `python3 sanguijuela.py --tipo texto|texto-largo|lectura|codigo
+  --tarea "..." [--solo-enrutar]`. Límite: reduce el gasto del
+  orquestador, no lo elimina; el código se enruta a dsh pero no se
+  ejecuta desde aquí.
+
 ## Leer lo que no se puede leer
 
 - **Puente de lectura** (`puente-lectura/leer.py`): trae el texto por
