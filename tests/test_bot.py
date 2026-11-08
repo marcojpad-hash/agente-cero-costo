@@ -6,7 +6,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "bot"))
 import gestor  # noqa: E402
 
 LIMPIO = {k: "" for k in ("GROQ_API_KEY", "GEMINI_API_KEY", "OPENROUTER_API_KEY",
-                          "TELEGRAM_ALLOWED_CHAT_IDS", "MOTORES_APAGADOS", "NEGATIVAS_REGEX", "CICLOS_MAX")}
+                          "TELEGRAM_ALLOWED_CHAT_IDS", "MOTORES_APAGADOS", "NEGATIVAS_REGEX", "CICLOS_MAX",
+                          "GITHUB_TOKEN", "GH_TOKEN")}
 
 
 class TestBot(unittest.TestCase):
@@ -126,6 +127,25 @@ class TestBot(unittest.TestCase):
         cq["from"]["id"] = 999
         with mock.patch.object(gestor, "tg"):
             self.assertIsNone(gestor.atender_boton("tok", cq))
+
+    def test_comandos_portados(self):
+        os.environ["TELEGRAM_ALLOWED_CHAT_IDS"] = "1"
+        with mock.patch.object(gestor, "leer_local", return_value="DIGEST OK"):
+            self.assertEqual(gestor.atender("t", {"chat": {"id": 1}, "text": "/memoria"}, "p", {}), "DIGEST OK")
+        with mock.patch.object(gestor, "ultimos_eventos", return_value=[{"fecha": "hoy", "tipo": "hecho", "de": "Grok", "mensaje": "ok"}]):
+            r = gestor.atender("t", {"chat": {"id": 1}, "text": "/bus"}, "p", {})
+            self.assertIn("Grok", r)
+            self.assertIn("ok", r)
+        with mock.patch.object(gestor, "cmd_interpretar", return_value="interpretado"):
+            self.assertEqual(gestor.atender("t", {"chat": {"id": 1}, "text": "/interpretar hola"}, "p", {}), "interpretado")
+
+    def test_emitir_bloque(self):
+        os.environ["TELEGRAM_ALLOWED_CHAT_IDS"] = "1"
+        bloque = "[EMITIR]\nde: Mj\ntipo: hecho\nmensaje: prueba\n[/EMITIR]"
+        with mock.patch.object(gestor, "subir_evento_github", return_value=True):
+            r = gestor.atender("t", {"chat": {"id": 1}, "text": bloque}, "p", {})
+        self.assertIn("Evento", r)
+        self.assertIn("subido a GitHub", r)
 
 
 if __name__ == "__main__":

@@ -15,10 +15,14 @@ import time
 import uuid
 import urllib.error
 import urllib.request
+import datetime
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
+REPO = AQUI.parent
+BUS = REPO / "conector" / "bus"
+DIGEST = REPO / "memoria-digest" / "DIGEST.md"
 GROQ_CHAT = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_AUDIO = "https://api.groq.com/openai/v1/audio/transcriptions"
 OPENROUTER_CHAT = "https://openrouter.ai/api/v1/chat/completions"
@@ -27,6 +31,7 @@ TG_API = "https://api.telegram.org/bot{token}/{method}"
 TG_FILE = "https://api.telegram.org/file/bot{token}/{path}"
 ESTADO_URL = "https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/ESTADO.md"
 TG_LIMITE = 4096
+TIPOS_EMITIR = ["actualizacion", "indicacion", "aviso", "hecho"]
 
 
 def env(nombre, defecto=None):
@@ -258,6 +263,128 @@ def bitacora(registro):
         f.write(json.dumps(registro, ensure_ascii=False) + "\n")
 
 
+# ---------- comandos portados de telegram-bot ----------
+
+def leer_local(ruta, max_chars=3500):
+    try:
+        texto = Path(ruta).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if len(texto) > max_chars:
+        texto = texto[:max_chars] + "\n\n...(recortado)"
+    return texto
+
+
+def ultimos_eventos(n=5):
+    try:
+        archivos = sorted(BUS.glob("*.json"), key=lambda p: p.stat().st_mtime)[-n:]
+    except OSError:
+        return []
+    eventos = []
+    for p in archivos:
+        try:
+            eventos.append(json.loads(p.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            continue
+    return eventos
+
+
+def aplicar_emitir(texto):
+    """Aplica bloque [EMITIR] localmente. Devuelve (ok, eid_o_error)."""
+    m = re.search(r"\[EMITIR\](.*?)\[/EMITIR\]", texto, re.S)
+    if not m:
+        return False, "No se encontró bloque [EMITIR]...[/EMITIR]."
+    campos = {}
+    for linea in m.group(1).strip().splitlines():
+        if ":" in linea:
+            k, v = linea.split(":", 1)
+            campos[k.strip().lower()] = v.strip()
+    de = campos.get("de", "")
+    tipo = campos.get("tipo", "")
+    mensaje = campos.get("mensaje", "")
+    if not de or tipo not in TIPOS_EMITIR or not mensaje:
+        return False, f"Bloque inválido: necesita de, tipo ({', '.join(TIPOS_EMITIR)}) y mensaje."
+    BUS.mkdir(parents=True, exist_ok=True)
+    ahora = datetime.datetime.now()
+    eid = ahora.strftime("%Y%m%d-%H%M%S-%f")
+    evento = {
+        "formato": 1,
+        "id": eid,
+        "fecha": ahora.strftime("%Y-%m-%d %H:%M"),
+        "version": 0,
+        "de": de,
+        "tipo": tipo,
+        "mensaje": mensaje,
+    }
+    (BUS / f"{eid}.json").write_text(json.dumps(evento, ensure_ascii=False, indent=2), encoding="utf-8")
+    return True, eid
+
+
+def subir_evento_github(eid):
+    """Sube el evento a main vía API de GitHub si hay GITHUB_TOKEN. Nunca pone el token en el repo."""
+    token = env("GITHUB_TOKEN") or env("GH_TOKEN")
+    if not token:
+        return False
+    path = f"conector/bus/{eid}.json"
+    contenido = (BUS / f"{eid}.json").read_text(encoding="utf-8")
+    url = f"https://api.github.com/repos/marcojpad-hash/agente-cero-costo/contents/{path}"
+    payload = {
+        "message": f"Bus: evento {eid} emitido por Telegram",
+        "content": __import__("base64").b64encode(contenido.encode()).decode(),
+        "branch": "main",
+    }
+    try:
+        # Primero intenta obtener SHA si existe (no debería)
+        req = urllib.request.Request(url, headers={"Authorization": f"token {token}", "User-Agent": "bot-gestor/1.0"})
+        try:
+            with urllib.request.urlopen(req) as r:
+                existente = json.loads(r.read())
+                payload["sha"] = existente["sha"]
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(url, data=data, headers={
+            "Authorization": f"token {token}",
+            "User-Agent": "bot-gestor/1.0",
+            "Content-Type": "application/json",
+        }, method="PUT")
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.status in (200, 201)
+    except Exception:
+        return False
+
+
+def cmd_memoria():
+    d = leer_local(DIGEST)
+    return d or "No hay resumen de memoria local todavía."
+
+
+def cmd_bus():
+    eventos = ultimos_eventos()
+    if not eventos:
+        return "El bus no tiene eventos todavía."
+    lineas = ["Últimos eventos del bus:\n"]
+    for e in eventos:
+        lineas.append(f"- {e.get('fecha','')} [{e.get('tipo','')}] {e.get('de','')}: {e.get('mensaje','')}")
+    return "\n".join(lineas)
+
+
+def cmd_interpretar(texto, prompt):
+    """Interpreta texto de otro modelo usando Groq (User-Agent propio)."""
+    key = env("GROQ_API_KEY")
+    if not key:
+        return "Falta GROQ_API_KEY para interpretar."
+    messages = [
+        {"role": "system", "content": prompt or "Interpreta y unifica el texto en una sola voz clara en español."},
+        {"role": "user", "content": "Texto a interpretar:\n" + texto[:4000]},
+    ]
+    try:
+        return _openai_chat(GROQ_CHAT, key, env("GESTOR_MODEL", "openai/gpt-oss-120b"), messages, 60)
+    except Exception as e:
+        return f"No pude interpretar ({type(e).__name__}): {str(e)[:200]}"
+
+
 # ---------- telegram ----------
 
 def partir(texto, limite=TG_LIMITE):
@@ -322,7 +449,8 @@ def transcribir_voz(token, file_id):
               + f"--{limite}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"voz.ogg\"\r\n"
                 "Content-Type: audio/ogg\r\n\r\n".encode() + audio + f"\r\n--{limite}--\r\n".encode())
     req = urllib.request.Request(GROQ_AUDIO, data=cuerpo, headers={
-        "Authorization": f"Bearer {key}", "Content-Type": f"multipart/form-data; boundary={limite}"})
+        "Authorization": f"Bearer {key}", "Content-Type": f"multipart/form-data; boundary={limite}",
+        "User-Agent": "bot-gestor/1.0"})
     with urllib.request.urlopen(req, timeout=120) as r:
         return json.loads(r.read().decode())["text"].strip()
 
@@ -348,9 +476,20 @@ def atender(token, msg, prompt, mem):
             return f"No pude transcribir tu nota de voz ({type(e).__name__}). Mándamela otra vez o escríbela."
     if not texto:
         return None
+    # [EMITIR] tiene prioridad
+    if "[EMITIR]" in texto and "[/EMITIR]" in texto:
+        ok, res = aplicar_emitir(texto)
+        if not ok:
+            return f"No se pudo aplicar el bloque:\n{res}"
+        subido = subir_evento_github(res)
+        if subido:
+            return f"Evento {res} en el bus y subido a GitHub (main)."
+        return f"Evento {res} guardado en el bus local. Subida a GitHub pendiente (falta GITHUB_TOKEN)."
     cmd = texto.split()[0].split("@")[0].lower()
     if cmd == "/start":
-        return "Listo, Mj. Háblame o mándame voz. Comandos: /motores /estado /reset"
+        return ("Listo, Mj. Háblame o mándame voz.\n"
+                "Comandos: /motores /estado /memoria /bus /interpretar /reset\n"
+                "Para emitir: [EMITIR]\nde: ...\ntipo: hecho\nmensaje: ...\n[/EMITIR]")
     if cmd == "/motores":
         ms = motores_config()
         return "Motores prendidos:\n" + ("\n".join(f"• {m['nombre']} ({m['model']})" for m in ms)
@@ -364,6 +503,15 @@ def atender(token, msg, prompt, mem):
             return resumen_estado(prompt)
         except Exception as e:
             return f"No pude leer ESTADO.md ({type(e).__name__}): {ESTADO_URL}"
+    if cmd == "/memoria":
+        return cmd_memoria()
+    if cmd == "/bus":
+        return cmd_bus()
+    if cmd == "/interpretar":
+        resto = texto[len("/interpretar"):].strip()
+        if not resto:
+            return "Pega el texto después de /interpretar."
+        return cmd_interpretar(resto, prompt)
     t0 = time.time()
     respuesta, motores, bloqueado, ciclos = resolver(texto, mem.get(str(chat_id), []), prompt)
     turno = uuid.uuid4().hex[:12]
