@@ -63,11 +63,17 @@ def api(token, metodo, **params):
         return json.load(r)
 
 
-def enviar(token, chat_id, texto):
+def enviar(token, chat_id, texto, botones=None):
     # Parte en trozos si es muy largo.
     for i in range(0, len(texto), LIMITE):
-        api(token, "sendMessage", chat_id=chat_id,
-            text=texto[i:i + LIMITE])
+        params = {"chat_id": chat_id, "text": texto[i:i + LIMITE]}
+        if botones and i == 0:
+            params["reply_markup"] = json.dumps(
+                {"inline_keyboard": [[
+                    {"text": "Acepto", "callback_data": "acepto"},
+                    {"text": "No", "callback_data": "no"},
+                ]]})
+        api(token, "sendMessage", **params)
 
 
 def ultimos_eventos(n=5):
@@ -134,20 +140,23 @@ def aplicar_bloque(texto):
 
 
 def agregar_pregunta(pregunta):
-    """Pregunta a los motores y devuelve la respuesta del gestor final."""
+    """Pregunta a los motores y devuelve la respuesta del gestor final.
+    Devuelve (final, err, sin_respuesta)."""
     r = subprocess.run(
         [sys.executable, AGREGADOR, pregunta],
         capture_output=True, text=True, timeout=600)
+    if r.returncode == 2 or "SIN_RESPUESTA" in r.stdout:
+        return None, "", True
     if r.returncode != 0:
-        return None, (r.stderr or r.stdout).strip()[:300] or "falló el agregador"
+        return None, (r.stderr or r.stdout).strip()[:300] or "falló el agregador", False
     # La salida trae las secciones de los motores y al final el gestor.
     texto = r.stdout
     marca = "=== Gestor final ==="
     if marca in texto:
         final = texto.split(marca, 1)[1]
         final = final.split("--- cuenta:", 1)[0].strip()
-        return final, ""
-    return texto.strip(), ""
+        return final, "", False
+    return texto.strip(), "", False
 
 
 def interpretar_texto(texto):
@@ -235,11 +244,41 @@ def responder(token, chat_id, texto):
         # Cualquier otro mensaje es una pregunta: el gestor final
         # consulta a los motores y responde con una sola voz.
         enviar(token, chat_id, "Consultando a los motores...")
-        final, err = agregar_pregunta(texto)
-        if final:
+        final, err, sin_respuesta = agregar_pregunta(texto)
+        if sin_respuesta:
+            # Regla del "no se puede": los motores se negaron 3 veces.
+            # No se manda la negativa; se ofrecen los botones Acepto/No.
+            enviar(token, chat_id,
+                   "Los motores se negaron 3 veces y no voy a mandarte "
+                   "la negativa. ¿Qué hago con tu pregunta?",
+                   botones=True)
+            PENDIENTES[chat_id] = texto
+        elif final:
             enviar(token, chat_id, final)
         else:
             enviar(token, chat_id, f"Me atoré con la pregunta: {err}")
+
+
+PENDIENTES = {}  # chat_id -> pregunta pendiente de Acepto/No
+
+
+def responder_boton(token, callback):
+    """Atiende un botón Acepto / No de una pregunta sin respuesta."""
+    chat_id = callback["message"]["chat"]["id"]
+    dato = callback.get("data", "")
+    pregunta = PENDIENTES.pop(chat_id, "")
+    api(token, "answerCallbackQuery",
+        callback_query_id=callback["id"])
+    if dato == "acepto":
+        if pregunta:
+            aplicar_bloque(
+                "[EMITIR]\nde: Bot Telegram\ntipo: aviso\n"
+                f"mensaje: Pregunta pendiente aceptada por Marco: {pregunta}\n"
+                "[/EMITIR]")
+        enviar(token, chat_id,
+               "Aceptado. Queda como pendiente en el bus.")
+    else:
+        enviar(token, chat_id, "No aceptado. Lo dejamos así.")
 
 
 def main():
@@ -262,6 +301,15 @@ def main():
             continue
         for upd in resp.get("result", []):
             offset = upd["update_id"] + 1
+            if "callback_query" in upd:
+                cb = upd["callback_query"]
+                log(f"Botón de {cb.get('from', {}).get('id')}: "
+                    f"{cb.get('data')!r}")
+                try:
+                    responder_boton(token, cb)
+                except Exception as e:  # noqa: BLE001 - un botón no tumba el bot
+                    log("Error con el botón:", e)
+                continue
             msg = upd.get("message") or {}
             texto = msg.get("text", "")
             chat = msg.get("chat", {})
