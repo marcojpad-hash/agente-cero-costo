@@ -8,6 +8,7 @@ Solo stdlib. Las claves se leen SOLO de variables de entorno.
 Un motor sin clave se salta; no tumba al bot.
 """
 import json
+import re
 import os
 import sys
 import time
@@ -93,8 +94,8 @@ def motores_config():
     """Lista de motores con su clave presente. Los que no tienen clave no aparecen."""
     candidatos = [
         ("groq-gpt-oss", "GROQ_API_KEY", "groq", env("MOTOR_GROQ_MODEL", "openai/gpt-oss-120b")),
-        ("groq-2", "GROQ_API_KEY", "groq", env("MOTOR_GROQ2_MODEL", "llama-3.3-70b-versatile")),
-        ("gemini", "GEMINI_API_KEY", "gemini", env("MOTOR_GEMINI_MODEL", "gemini-2.5-flash")),
+        ("groq-2", "GROQ_API_KEY", "groq", env("MOTOR_GROQ2_MODEL", "openai/gpt-oss-20b")),
+        ("gemini", "GEMINI_API_KEY", "gemini", env("MOTOR_GEMINI_MODEL", "gemini-3.8-flash")),
         ("openrouter", "OPENROUTER_API_KEY", "openrouter",
          env("MOTOR_OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")),
     ]
@@ -146,6 +147,58 @@ def entrada_gestor(pregunta, respuestas):
         bloques.append(f"\n### MOTOR: {nombre}\n{texto}")
     bloques.append("\nJunta todo y contesta a Mj con una sola voz, siguiendo tus reglas.")
     return "\n".join(bloques)
+
+
+NEGATIVAS_DEFECTO = [
+    r"no se puede", r"no es posible", r"no puedo", r"imposible", r"no tengo acceso",
+    r"no me es posible", r"no est[aá] a mi alcance", r"no hay forma",
+    r"i can(no|')?t", r"cannot", r"not possible", r"unable to", r"i don'?t have access",
+]
+
+
+def patrones_negativa():
+    crudo = env("NEGATIVAS_REGEX")  # lista separada por "||"
+    lista = crudo.split("||") if crudo else NEGATIVAS_DEFECTO
+    return [re.compile(p, re.IGNORECASE) for p in lista if p.strip()]
+
+
+def es_negativa(texto):
+    return any(p.search(texto or "") for p in patrones_negativa())
+
+
+def rotar(motores, ciclo):
+    if not motores:
+        return motores
+    k = ciclo % len(motores)
+    return motores[k:] + motores[:k]
+
+
+def pedido_resolucion(pregunta, borrador, lider, ciclo):
+    return (f"CICLO DE RESOLUCIÓN {ciclo}. Lidera: {lider}.\n"
+            f"Mj pidió:\n{pregunta}\n\nEl borrador anterior se negó:\n{borrador}\n\n"
+            "Prohibido negarse. Encuentra el camino que SÍ funciona: la solución directa, un análogo "
+            "o un equivalente funcional legítimo. Si de verdad hay un bloqueo, nómbralo concreto y da "
+            "la ÚNICA acción que Mj tendría que aceptar, en una línea que empiece con 'ACCION:'.")
+
+
+def resolver(pregunta, historial, prompt, motores=None):
+    """Gestiona y, si el borrador se niega, corre hasta N ciclos rotando el motor líder.
+    Devuelve (texto, motores, bloqueado, ciclos)."""
+    motores = motores_config() if motores is None else motores
+    texto, resp = gestionar(pregunta, historial, prompt, motores)
+    maximo = int(env("CICLOS_MAX", "3"))
+    ciclo = 0
+    while es_negativa(texto) and ciclo < maximo:
+        ciclo += 1
+        orden = rotar(motores, ciclo)
+        lider = orden[0]["nombre"] if orden else "gestor"
+        texto, resp = gestionar(pedido_resolucion(pregunta, texto, lider, ciclo), historial, prompt, orden)
+    return texto, resp, es_negativa(texto), ciclo
+
+
+def accion_de(texto):
+    m = re.search(r"ACCION:\s*(.+)", texto or "")
+    return m.group(1).strip() if m else "Aceptar el camino propuesto arriba."
 
 
 def gestionar(pregunta, historial, prompt, motores=None):
@@ -226,9 +279,34 @@ def tg(token, metodo, payload=None, timeout=70):
     return http_json(TG_API.format(token=token, method=metodo), payload or {}, timeout=timeout)
 
 
-def enviar(token, chat_id, texto):
-    for p in partir(texto):
-        tg(token, "sendMessage", {"chat_id": chat_id, "text": p})
+def enviar(token, chat_id, texto, botones=None):
+    partes = partir(texto)
+    for i, p in enumerate(partes):
+        payload = {"chat_id": chat_id, "text": p}
+        if botones and i == len(partes) - 1:
+            payload["reply_markup"] = {"inline_keyboard": [botones]}
+        tg(token, "sendMessage", payload)
+
+
+def botones_decision(turno):
+    return [{"text": "Acepto", "callback_data": f"si:{turno}"},
+            {"text": "No", "callback_data": f"no:{turno}"}]
+
+
+def atender_boton(token, cq):
+    """Registra la decisión de Mj al tocar Acepto/No."""
+    chat_id = cq.get("message", {}).get("chat", {}).get("id")
+    quien = cq.get("from", {}).get("id")
+    if not (permitido(chat_id) and permitido(quien)):
+        tg(token, "answerCallbackQuery", {"callback_query_id": cq["id"]})
+        return None
+    voto, _, turno = (cq.get("data") or "").partition(":")
+    acepto = voto == "si"
+    bitacora({"ts": time.time(), "chat": chat_id, "turno": turno, "decision_mj": "acepto" if acepto else "no",
+              "atribucion": "lo hizo el bot" if acepto else None})
+    tg(token, "answerCallbackQuery", {"callback_query_id": cq["id"],
+                                      "text": "Anotado: lo hizo el bot." if acepto else "Anotado: no."})
+    return "acepto" if acepto else "no"
 
 
 def transcribir_voz(token, file_id):
@@ -287,11 +365,18 @@ def atender(token, msg, prompt, mem):
         except Exception as e:
             return f"No pude leer ESTADO.md ({type(e).__name__}): {ESTADO_URL}"
     t0 = time.time()
-    respuesta, motores = gestionar(texto, mem.get(str(chat_id), []), prompt)
+    respuesta, motores, bloqueado, ciclos = resolver(texto, mem.get(str(chat_id), []), prompt)
+    turno = uuid.uuid4().hex[:12]
+    if bloqueado:
+        respuesta = (f"Tras {ciclos} ciclos de resolución sigue un bloqueo.\n\n{respuesta}\n\n"
+                     f"Lo único que necesito que aceptes: {accion_de(respuesta)}")
     recordar(mem, chat_id, texto, respuesta)
     guardar_memoria(mem)
     bitacora({"ts": t0, "seg": round(time.time() - t0, 1), "chat": chat_id, "pregunta": texto,
-              "motores": {k: v[:2000] for k, v in motores.items()}, "respuesta": respuesta})
+              "motores": {k: v[:2000] for k, v in motores.items()}, "respuesta": respuesta,
+              "turno": turno, "ciclos": ciclos, "bloqueado": bloqueado})
+    if bloqueado:
+        return {"texto": respuesta, "botones": botones_decision(turno)}
     return respuesta
 
 
@@ -308,14 +393,19 @@ def main():
     while True:
         try:
             r = tg(token, "getUpdates", {"offset": offset, "timeout": 50,
-                                         "allowed_updates": ["message"]})
+                                         "allowed_updates": ["message", "callback_query"]})
             for u in r.get("result", []):
                 offset = u["update_id"] + 1
+                if u.get("callback_query"):
+                    atender_boton(token, u["callback_query"])
+                    continue
                 msg = u.get("message")
                 if not msg:
                     continue
                 resp = atender(token, msg, prompt, mem)
-                if resp:
+                if isinstance(resp, dict):
+                    enviar(token, msg["chat"]["id"], resp["texto"], resp["botones"])
+                elif resp:
                     enviar(token, msg["chat"]["id"], resp)
         except KeyboardInterrupt:
             break
