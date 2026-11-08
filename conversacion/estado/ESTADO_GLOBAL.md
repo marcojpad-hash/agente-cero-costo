@@ -41,3 +41,12 @@ Conseguir que agentes de modelos distintos reciban automáticamente la informaci
 4. Registrar endpoints de agentes que acepten callbacks; para agentes sin webhook, habilitar polling.
 5. Conectar el exportador de conversación y probar ingesta turno a turno.
 6. Ejecutar prueba de dos agentes con ACK, respuesta cruzada y reinicio.
+
+## Contrato transversal de aprendizaje de fallos
+
+- Contrato obligatorio creado en `gabinete/APRENDIZAJE_DE_FALLOS/CONTRATO_INGENIERIA_INVERSA.md`.
+- Índice, reglas aprendidas y plantilla de expediente creados en el mismo directorio.
+- Protocolo de continuidad y README general enlazan el Gabinete.
+- Todo error atribuible activa reconstrucción, análisis de causa raíz, corrección, prevención, regresión, registro y difusión a agentes pertinentes.
+- Ubicación transversal: Gabinete; Steambox continúa reservado al motor U6.
+- **Estado:** archivos guardados en `feature/openai-self-hosted-executor`; no integrados en `main`. Aún no existe automatización desplegada que fuerce el cumplimiento ni ACK automáticos de todos los agentes.
