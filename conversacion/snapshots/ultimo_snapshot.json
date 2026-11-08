@@ -1,0 +1,19 @@
+{
+  "schema": "agent-continuity.snapshot.v1",
+  "date": "2026-11-08",
+  "status": "IMPLEMENTATION_PENDING_DEPLOYMENT",
+  "goal": "Automatic repository and conversation inputs for independent agents with durable shared continuity.",
+  "active_project": "agente-cero-costo",
+  "branch": "feature/openai-self-hosted-executor",
+  "pr": 5,
+  "decisions_ref": "conversacion/estado/DECISIONES.md",
+  "state_ref": "conversacion/estado/ESTADO_GLOBAL.md",
+  "pending_ref": "conversacion/estado/PENDIENTES.md",
+  "event_contract": "conector/bus/CONTRATO_EVENTOS_V1.md",
+  "router": "infra/agent-router/README.md",
+  "conversation_ingest": "POST /v1/events/conversation",
+  "whatsapp": "infra/whatsapp/README.md",
+  "connected_agents": [],
+  "verified_tests": [],
+  "next_action": "Deploy persistent router and configure callback secrets/endpoints."
+}
