@@ -2,7 +2,7 @@
 
 ## Estado operativo — 2026-11-08
 
-<badge>PASS — primera ejecución real</badge>
+**PASS — primera ejecución real**
 
 Este componente ya ejecutó un trabajo en un host Linux de GitHub Actions y guardó evidencia.
 
