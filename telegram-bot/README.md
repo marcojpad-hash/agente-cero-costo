@@ -30,9 +30,33 @@ ChatGPT, el que sea), la pasa por el gestor y la devuelve en una
 sola voz. Este bot es de Marco: él es el dueño (lo crea en
 @BotFather con su cuenta), y el bot interpreta a cualquier otro.
 
+## Voz (gratis, offline, 2026-11-08)
+
+El bot también escucha y habla. Mándale un mensaje de voz y te
+contesta con voz.
+
+- **Entender:** faster-whisper `base` en español (open source,
+  offline). La voz de Telegram llega en ogg opus; ffmpeg la pasa
+  a wav 16 kHz mono y faster-whisper la transcribe.
+- **Contestar:** el agregador (Groq + Gemini, gratis) responde y
+  Piper `es_MX-ald-medium` (offline) la dice; ffmpeg la pasa a
+  ogg opus y se manda con `sendVoice`.
+- Todo corre en la VM de Pecas, sin pagar nada. Piper y
+  faster-whisper viven en `~/workspace/piper-venv/` (el venv ya
+  tiene los dos). `voz.py` es el módulo; `bot.py` lo usa si está
+  disponible y sigue sin voz si no lo está.
+- Detalle: faster-whisper 1.2.1 con av 19 falla en `decode_audio`
+  (`metadata_errors`); por eso `voz.py` decodifica con ffmpeg +
+  `wave` a un arreglo numpy y se lo pasa a `transcribe`, no la
+  ruta. Probado: Piper genera la voz y faster-whisper base la
+  transcribe bien en español (solo los nombres propios raros como
+  "Mpemba" salen deformados).
+
 ## Qué hace
 
 - Pregunta en texto libre: responde con la voz del gestor final.
+- Mensaje de voz: lo transcribe, consulta a los motores y te
+  contesta con voz.
 - `/interpretar <texto>`: interpreta la respuesta de otro modelo.
 - `/estado`: estado vigente del equipo.
 - `/memoria`: resumen público de la memoria.

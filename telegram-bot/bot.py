@@ -28,6 +28,13 @@ import time
 import urllib.request
 import urllib.parse
 
+try:
+    import voz
+    VOZ_OK = True
+except Exception:  # noqa: BLE001 - el bot sigue sin voz
+    voz = None
+    VOZ_OK = False
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 CONECTOR = os.path.join(REPO, "conector")
@@ -168,10 +175,49 @@ def interpretar_texto(texto):
     return r.stdout.split("--- cuenta:", 1)[0].strip(), ""
 
 
+def responder_voz(token, chat_id, file_id):
+    """Voz gratis: ogg -> texto -> agregador -> Piper -> voz de vuelta."""
+    if not VOZ_OK:
+        enviar(token, chat_id,
+               "La voz no está disponible en este bot todavía.")
+        return
+    ogg = wav = respuesta_ogg = None
+    try:
+        ogg = voz.descargar_voz(token, file_id)
+        wav = voz.ogg_a_wav16k(ogg)
+        texto = voz.transcribir(wav)
+        if not texto.strip():
+            enviar(token, chat_id,
+                   "No te entendí la voz. Prueba de nuevo o escríbelo.")
+            return
+        enviar(token, chat_id, f"Te entendí: {texto}")
+        final, err, sin_respuesta = agregar_pregunta(texto)
+        if sin_respuesta:
+            enviar(token, chat_id,
+                   "Los motores se negaron 3 veces y no voy a mandarte "
+                   "la negativa. ¿Qué hago con tu pregunta?",
+                   botones=True)
+            PENDIENTES[chat_id] = texto
+            return
+        if not final:
+            enviar(token, chat_id, f"Me atoré con la pregunta: {err}")
+            return
+        respuesta_ogg = voz.hablar(final)
+        voz.enviar_voz(token, chat_id, respuesta_ogg)
+    except Exception as e:  # noqa: BLE001 - la voz no tumba el bot
+        log("Error con la voz:", e)
+        try:
+            enviar(token, chat_id, f"Me atoré con la voz: {e}")
+        except Exception:
+            pass
+    finally:
+        voz.limpiar(ogg, wav, respuesta_ogg)
+
+
 AYUDA = (
     "Soy el host del equipo y hablo por todos los motores. "
-    "Escríbeme una pregunta y te respondo con una sola voz, "
-    "después de consultar a los motores.\n\n"
+    "Escríbeme una pregunta o mándame un mensaje de voz y te respondo "
+    "con una sola voz, después de consultar a los motores.\n\n"
     "Comandos:\n"
     "/estado - estado vigente\n"
     "/memoria - resumen público de la memoria\n"
@@ -311,9 +357,20 @@ def main():
                     log("Error con el botón:", e)
                 continue
             msg = upd.get("message") or {}
-            texto = msg.get("text", "")
             chat = msg.get("chat", {})
-            if not texto or not chat.get("id"):
+            if not chat.get("id"):
+                continue
+            if "voice" in msg:
+                log(f"Voz de {chat.get('id')}: "
+                    f"{msg['voice'].get('duration')}s")
+                try:
+                    responder_voz(token, chat["id"],
+                                  msg["voice"]["file_id"])
+                except Exception as e:  # noqa: BLE001
+                    log("Error con la voz:", e)
+                continue
+            texto = msg.get("text", "")
+            if not texto:
                 continue
             log(f"Mensaje de {chat.get('id')}: {texto[:80]!r}")
             try:
