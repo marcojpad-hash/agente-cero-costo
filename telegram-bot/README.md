@@ -51,6 +51,12 @@ contesta con voz.
   ruta. Probado: Piper genera la voz y faster-whisper base la
   transcribe bien en español (solo los nombres propios raros como
   "Mpemba" salen deformados).
+- Medición objetiva (`medir_voz.py`, escrita por Gemini): la voz
+  de Piper sale a 0 dBFS de pico (muy fuerte) y tono medio
+  (162–167 Hz). `voz.py` la baja 6 dB (`volume=0.5`) antes de
+  mandarla: queda en −6 dB de pico, −19 dB RMS, tono medio,
+  LISTA: SI. Sin una voz de referencia no se puede medir si "se
+  parece" a otra voz; lo que se mide es su propio tono y volumen.
 
 ## Qué hace
 

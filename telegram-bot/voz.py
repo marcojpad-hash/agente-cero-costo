@@ -107,9 +107,10 @@ def hablar(texto):
         raise RuntimeError(
             "piper fallo: %s" % (r.stderr or r.stdout)[:300])
     ruta_ogg = os.path.splitext(ruta_wav)[0] + ".ogg"
+    # Piper sale a 0 dBFS (muy fuerte); se baja 6 dB para no saturar.
     subprocess.run(
         ["ffmpeg", "-y", "-i", ruta_wav,
-         "-c:a", "libopus", ruta_ogg],
+         "-af", "volume=0.5", "-c:a", "libopus", ruta_ogg],
         check=True, capture_output=True)
     try:
         os.remove(ruta_wav)
