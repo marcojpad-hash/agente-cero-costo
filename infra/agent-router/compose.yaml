@@ -5,6 +5,7 @@ services:
     environment:
       ROUTER_DB: /data/router.sqlite3
       ROUTER_INGEST_TOKEN: ${ROUTER_INGEST_TOKEN:?set ROUTER_INGEST_TOKEN}
+      AGENT_CALLBACK_TOKEN: ${AGENT_CALLBACK_TOKEN:-}
       ALLOWED_REPOSITORIES: ${ALLOWED_REPOSITORIES:-marcojpad-hash/agente-cero-costo}
       AGENT_WEBHOOKS_JSON: ${AGENT_WEBHOOKS_JSON:-{}}
     ports:
