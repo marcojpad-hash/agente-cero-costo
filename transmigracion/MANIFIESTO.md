@@ -2,7 +2,7 @@
 
 Versión: 0.1
 
-Generado: 2026-11-08 05:17
+Generado: 2026-11-08 05:44
 
 Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualquier sesión, de cualquier empresa, puede cargarlo y tener la misma información.
 
@@ -19,13 +19,26 @@ Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualqu
 ## Herramientas del repo (inventario)
 
 - ./README.md
+- ./adapters/generar.py
+- ./adapters/salida/claude.md
+- ./adapters/salida/codex.toml
+- ./adapters/salida/gemini.md
+- ./adapters/verificar.py
+- ./agents/README.md
+- ./agents/registry.yaml
+- ./agents/sequential-verifiable/AGENT.md
+- ./agents/sequential-verifiable/permissions.yaml
+- ./agents/sequential-verifiable/success-metrics.md
+- ./agents/sequential-verifiable/workflow.md
 - ./avisos/ACTUALIZACIONES.md
 - ./avisos/README.md
 - ./avisos/ULTIMA_ACTUALIZACION.md
 - ./avisos/VERSION
 - ./avisos/avisar.py
 - ./conector/ESTADO.md
+- ./conector/PERMISOS.md
 - ./conector/README.md
+- ./conector/VINCULOS.md
 - ./conector/aplicar.py
 - ./conector/bus/20261108-044852-742005.json
 - ./conector/bus/20261108-045705-266798.json
@@ -42,6 +55,9 @@ Este paquete clona **capacidades, no el personaje**. Cualquier modelo, en cualqu
 - ./maquina/Dockerfile
 - ./maquina/README.md
 - ./maquina/setup.sh
+- ./memoria-digest/DIGEST.md
+- ./memoria-digest/README.md
+- ./memoria-digest/sincronizar.py
 - ./memoria/swap.md
 - ./modelos/TWIL-8B.md
 - ./orquestador/README.md

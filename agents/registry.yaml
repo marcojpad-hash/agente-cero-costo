@@ -1,0 +1,8 @@
+agents:
+  - id: sequential-verifiable
+    version: "0.1"
+    path: agents/sequential-verifiable/AGENT.md
+    workflow: agents/sequential-verifiable/workflow.md
+    metrics: agents/sequential-verifiable/success-metrics.md
+    permissions: agents/sequential-verifiable/permissions.yaml
+    adapters: [claude, codex, gemini]

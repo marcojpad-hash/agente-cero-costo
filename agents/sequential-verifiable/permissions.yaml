@@ -1,0 +1,18 @@
+# Permisos de sequential-verifiable
+
+puede:
+  - leer_repos_publicos: true
+  - leer_repos_privados_autorizados: true
+  - escribir_en_repos_asignados: true
+  - crear_issues_bus: true
+  - leer_memoria_compartida: true
+  - escribir_memoria_compartida: true
+  - ejecutar_herramientas_locales: true
+
+no_puede:
+  - guardar_secretos_en_repos: true
+  - leer_o_copiar_claves_de_la_boveda: true
+  - publicar_contenido_privado: true
+  - subir_workflows_de_github_por_api: true
+  - montar_mp4_oficial_capcot: true
+  - publicar_en_youtube_tiktok_facebook: true
