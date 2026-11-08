@@ -6,7 +6,7 @@ Versión: 4 — Fecha: 2026-11-08 04:57
 
 Pendientes en el tablero CAPCOT: 5
 
-Eventos en el bus: 1
+Eventos en el bus: 2
 
 ## Para el modelo que lee esto
 
