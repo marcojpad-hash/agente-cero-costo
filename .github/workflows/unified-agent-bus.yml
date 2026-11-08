@@ -1,0 +1,26 @@
+name: Unified agent bus tests
+on:
+  push:
+    branches: [feature/unified-agent-bus-v2]
+    paths:
+      - "conector/bus_core.py"
+      - "conector/puente_mcp.py"
+      - "tests/test_unified_bus.py"
+      - ".github/workflows/unified-agent-bus.yml"
+  pull_request:
+    paths:
+      - "conector/bus_core.py"
+      - "conector/puente_mcp.py"
+      - "tests/test_unified_bus.py"
+      - ".github/workflows/unified-agent-bus.yml"
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m unittest discover -s tests -p "test_unified_bus.py" -v
+      - run: python -m pip install -r conector/requirements-mcp.txt
+      - run: python -c "import sys; sys.path.insert(0, 'conector'); import puente_mcp; print('MCP module imported')"
