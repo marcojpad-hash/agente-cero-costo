@@ -15,10 +15,14 @@ import time
 import uuid
 import urllib.error
 import urllib.request
+import datetime
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 AQUI = Path(__file__).resolve().parent
+REPO = AQUI.parent
+BUS = REPO / "conector" / "bus"
+DIGEST = REPO / "memoria-digest" / "DIGEST.md"
 GROQ_CHAT = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_AUDIO = "https://api.groq.com/openai/v1/audio/transcriptions"
 OPENROUTER_CHAT = "https://openrouter.ai/api/v1/chat/completions"
@@ -27,6 +31,14 @@ TG_API = "https://api.telegram.org/bot{token}/{method}"
 TG_FILE = "https://api.telegram.org/file/bot{token}/{path}"
 ESTADO_URL = "https://raw.githubusercontent.com/marcojpad-hash/agente-cero-costo/main/conector/ESTADO.md"
 TG_LIMITE = 4096
+TIPOS_EMITIR = ["actualizacion", "indicacion", "aviso", "hecho"]
+
+IDENTIDAD = (
+    "Eres el Gestor Mj. Resuelves en primera persona. "
+    "No hables de tokenización ni de cómo funcionas internamente. "
+    "No des código salvo que Mj lo pida explícitamente. "
+    "Nunca respondas solo 'no se puede'; siempre da el camino que sí funciona."
+)
 
 
 def env(nombre, defecto=None):
@@ -122,9 +134,7 @@ def llamar_motor(m, messages, timeout=None):
 def consultar_motores(pregunta, historial, motores=None):
     """Llama a todos los motores en paralelo. Devuelve {nombre: texto o 'ERROR: ...'}."""
     motores = motores_config() if motores is None else motores
-    messages = [{"role": "system", "content":
-                 "Responde en español de México, directo y concreto. No inventes datos ni fuentes; "
-                 "si no sabes algo, dilo y da el camino que sí funciona."}]
+    messages = [{"role": "system", "content": IDENTIDAD}]
     messages += historial + [{"role": "user", "content": pregunta}]
     resultados = {}
     if not motores:
@@ -144,6 +154,7 @@ def entrada_gestor(pregunta, respuestas):
     if not respuestas:
         bloques.append("(ningún motor respondió)")
     for nombre, texto in respuestas.items():
+        texto = (texto or "")[:3000]
         bloques.append(f"\n### MOTOR: {nombre}\n{texto}")
     bloques.append("\nJunta todo y contesta a Mj con una sola voz, siguiendo tus reglas.")
     return "\n".join(bloques)
@@ -188,6 +199,9 @@ def resolver(pregunta, historial, prompt, motores=None):
     texto, resp = gestionar(pregunta, historial, prompt, motores)
     maximo = int(env("CICLOS_MAX", "3"))
     ciclo = 0
+    # (e) si la pregunta de Mj contiene "no se puede", no activar ciclo
+    if "no se puede" in (pregunta or "").lower():
+        return texto, resp, es_negativa(texto), ciclo
     while es_negativa(texto) and ciclo < maximo:
         ciclo += 1
         orden = rotar(motores, ciclo)
@@ -217,6 +231,15 @@ def gestionar(pregunta, historial, prompt, motores=None):
     try:
         return llamar_motor(gestor, messages), respuestas
     except Exception as e:
+        # (b) reintento con espera y respaldo en 429
+        if "429" in str(e) or "rate" in str(e).lower() or "tpm" in str(e).lower():
+            time.sleep(2)
+            respaldo = env("GESTOR_MODEL_RESPALDO", "openai/gpt-oss-20b")
+            gestor["model"] = respaldo
+            try:
+                return llamar_motor(gestor, messages), respuestas
+            except Exception as e2:
+                e = e2
         if validas:
             n, t = next(iter(validas.items()))
             return f"(El gestor falló; te paso la respuesta de {n}.)\n\n{t}", respuestas
@@ -256,6 +279,128 @@ def recordar(mem, chat_id, pregunta, respuesta, n=None):
 def bitacora(registro):
     with open(ruta_datos() / "turnos.jsonl", "a", encoding="utf-8") as f:
         f.write(json.dumps(registro, ensure_ascii=False) + "\n")
+
+
+# ---------- comandos portados de telegram-bot ----------
+
+def leer_local(ruta, max_chars=3500):
+    try:
+        texto = Path(ruta).read_text(encoding="utf-8")
+    except OSError:
+        return None
+    if len(texto) > max_chars:
+        texto = texto[:max_chars] + "\n\n...(recortado)"
+    return texto
+
+
+def ultimos_eventos(n=5):
+    try:
+        archivos = sorted(BUS.glob("*.json"), key=lambda p: p.stat().st_mtime)[-n:]
+    except OSError:
+        return []
+    eventos = []
+    for p in archivos:
+        try:
+            eventos.append(json.loads(p.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            continue
+    return eventos
+
+
+def aplicar_emitir(texto):
+    """Aplica bloque [EMITIR] localmente. Devuelve (ok, eid_o_error)."""
+    m = re.search(r"\[EMITIR\](.*?)\[/EMITIR\]", texto, re.S)
+    if not m:
+        return False, "No se encontró bloque [EMITIR]...[/EMITIR]."
+    campos = {}
+    for linea in m.group(1).strip().splitlines():
+        if ":" in linea:
+            k, v = linea.split(":", 1)
+            campos[k.strip().lower()] = v.strip()
+    de = campos.get("de", "")
+    tipo = campos.get("tipo", "")
+    mensaje = campos.get("mensaje", "")
+    if not de or tipo not in TIPOS_EMITIR or not mensaje:
+        return False, f"Bloque inválido: necesita de, tipo ({', '.join(TIPOS_EMITIR)}) y mensaje."
+    BUS.mkdir(parents=True, exist_ok=True)
+    ahora = datetime.datetime.now()
+    eid = ahora.strftime("%Y%m%d-%H%M%S-%f")
+    evento = {
+        "formato": 1,
+        "id": eid,
+        "fecha": ahora.strftime("%Y-%m-%d %H:%M"),
+        "version": 0,
+        "de": de,
+        "tipo": tipo,
+        "mensaje": mensaje,
+    }
+    (BUS / f"{eid}.json").write_text(json.dumps(evento, ensure_ascii=False, indent=2), encoding="utf-8")
+    return True, eid
+
+
+def subir_evento_github(eid):
+    """Sube el evento a main vía API de GitHub si hay GITHUB_TOKEN. Nunca pone el token en el repo."""
+    token = env("GITHUB_TOKEN") or env("GH_TOKEN")
+    if not token:
+        return False
+    path = f"conector/bus/{eid}.json"
+    contenido = (BUS / f"{eid}.json").read_text(encoding="utf-8")
+    url = f"https://api.github.com/repos/marcojpad-hash/agente-cero-costo/contents/{path}"
+    payload = {
+        "message": f"Bus: evento {eid} emitido por Telegram",
+        "content": __import__("base64").b64encode(contenido.encode()).decode(),
+        "branch": "main",
+    }
+    try:
+        # Primero intenta obtener SHA si existe (no debería)
+        req = urllib.request.Request(url, headers={"Authorization": f"token {token}", "User-Agent": "bot-gestor/1.0"})
+        try:
+            with urllib.request.urlopen(req) as r:
+                existente = json.loads(r.read())
+                payload["sha"] = existente["sha"]
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                raise
+        data = json.dumps(payload).encode()
+        req = urllib.request.Request(url, data=data, headers={
+            "Authorization": f"token {token}",
+            "User-Agent": "bot-gestor/1.0",
+            "Content-Type": "application/json",
+        }, method="PUT")
+        with urllib.request.urlopen(req, timeout=60) as r:
+            return r.status in (200, 201)
+    except Exception:
+        return False
+
+
+def cmd_memoria():
+    d = leer_local(DIGEST)
+    return d or "No hay resumen de memoria local todavía."
+
+
+def cmd_bus():
+    eventos = ultimos_eventos()
+    if not eventos:
+        return "El bus no tiene eventos todavía."
+    lineas = ["Últimos eventos del bus:\n"]
+    for e in eventos:
+        lineas.append(f"- {e.get('fecha','')} [{e.get('tipo','')}] {e.get('de','')}: {e.get('mensaje','')}")
+    return "\n".join(lineas)
+
+
+def cmd_interpretar(texto, prompt):
+    """Interpreta texto de otro modelo usando Groq (User-Agent propio)."""
+    key = env("GROQ_API_KEY")
+    if not key:
+        return "Falta GROQ_API_KEY para interpretar."
+    messages = [
+        {"role": "system", "content": prompt or "Interpreta y unifica el texto en una sola voz clara en español."},
+        {"role": "user", "content": "Texto a interpretar:\n" + texto[:4000]},
+    ]
+    try:
+        return _openai_chat(GROQ_CHAT, key, env("GESTOR_MODEL", "openai/gpt-oss-120b"), messages, 60)
+    except Exception as e:
+        return f"No pude interpretar ({type(e).__name__}): {str(e)[:200]}"
 
 
 # ---------- telegram ----------
@@ -322,7 +467,8 @@ def transcribir_voz(token, file_id):
               + f"--{limite}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"voz.ogg\"\r\n"
                 "Content-Type: audio/ogg\r\n\r\n".encode() + audio + f"\r\n--{limite}--\r\n".encode())
     req = urllib.request.Request(GROQ_AUDIO, data=cuerpo, headers={
-        "Authorization": f"Bearer {key}", "Content-Type": f"multipart/form-data; boundary={limite}"})
+        "Authorization": f"Bearer {key}", "Content-Type": f"multipart/form-data; boundary={limite}",
+        "User-Agent": "bot-gestor/1.0"})
     with urllib.request.urlopen(req, timeout=120) as r:
         return json.loads(r.read().decode())["text"].strip()
 
@@ -331,15 +477,18 @@ def resumen_estado(prompt):
     texto = http_bytes(ESTADO_URL, timeout=30).decode("utf-8", "replace")
     pedido = "Resume para Mj, en 5 líneas máximo, este estado del equipo:\n\n" + texto[:12000]
     resp, _ = gestionar(pedido, [], prompt, motores=[])
-    return resp if env("GROQ_API_KEY") else texto[:3500]
+    return resp
 
 
-def atender(token, msg, prompt, mem):
-    chat_id = msg["chat"]["id"]
+def atender(token, update, prompt, mem):
+    """Procesa un update. Devuelve la respuesta enviada o None."""
+    if "callback_query" in update:
+        return atender_boton(token, update["callback_query"])
+    msg = update.get("message") or update.get("edited_message") or {}
+    chat_id = msg.get("chat", {}).get("id")
     if not permitido(chat_id):
-        bitacora({"ts": time.time(), "chat": chat_id, "rechazado": True})
         return None
-    texto = (msg.get("text") or "").strip()
+    texto = msg.get("text") or ""
     if msg.get("voice") or msg.get("audio"):
         archivo = (msg.get("voice") or msg.get("audio"))["file_id"]
         try:
@@ -348,35 +497,29 @@ def atender(token, msg, prompt, mem):
             return f"No pude transcribir tu nota de voz ({type(e).__name__}). Mándamela otra vez o escríbela."
     if not texto:
         return None
-    cmd = texto.split()[0].split("@")[0].lower()
-    if cmd == "/start":
-        return "Listo, Mj. Háblame o mándame voz. Comandos: /motores /estado /reset"
-    if cmd == "/motores":
-        ms = motores_config()
-        return "Motores prendidos:\n" + ("\n".join(f"• {m['nombre']} ({m['model']})" for m in ms)
-                                         or "ninguno: falta poner claves en el .env")
-    if cmd == "/reset":
-        mem.pop(str(chat_id), None)
-        guardar_memoria(mem)
-        return "Memoria de este chat borrada."
-    if cmd == "/estado":
-        try:
-            return resumen_estado(prompt)
-        except Exception as e:
-            return f"No pude leer ESTADO.md ({type(e).__name__}): {ESTADO_URL}"
-    t0 = time.time()
+    if texto.startswith("/memoria"):
+        return cmd_memoria()
+    if texto.startswith("/bus"):
+        return cmd_bus()
+    if texto.startswith("/interpretar"):
+        return cmd_interpretar(texto[len("/interpretar"):].strip(), prompt)
+    if "[EMITIR]" in texto and "[/EMITIR]" in texto:
+        ok, eid = aplicar_emitir(texto)
+        if ok:
+            subido = subir_evento_github(eid)
+            return f"Evento {eid} creado." + (" Subido a GitHub." if subido else "")
+        return eid
+    if texto.startswith("/estado"):
+        return resumen_estado(prompt)
     respuesta, motores, bloqueado, ciclos = resolver(texto, mem.get(str(chat_id), []), prompt)
-    turno = uuid.uuid4().hex[:12]
-    if bloqueado:
-        respuesta = (f"Tras {ciclos} ciclos de resolución sigue un bloqueo.\n\n{respuesta}\n\n"
-                     f"Lo único que necesito que aceptes: {accion_de(respuesta)}")
     recordar(mem, chat_id, texto, respuesta)
     guardar_memoria(mem)
-    bitacora({"ts": t0, "seg": round(time.time() - t0, 1), "chat": chat_id, "pregunta": texto,
-              "motores": {k: v[:2000] for k, v in motores.items()}, "respuesta": respuesta,
-              "turno": turno, "ciclos": ciclos, "bloqueado": bloqueado})
-    if bloqueado:
-        return {"texto": respuesta, "botones": botones_decision(turno)}
+    turno = uuid.uuid4().hex[:8]
+    bitacora({"ts": time.time(), "chat": chat_id, "turno": turno, "pregunta": texto[:200],
+              "respuesta": respuesta[:500], "bloqueado": bloqueado, "ciclos": ciclos,
+              "motores": list(motores.keys())})
+    botones = botones_decision(turno) if bloqueado else None
+    enviar(token, chat_id, respuesta, botones)
     return respuesta
 
 
@@ -384,33 +527,17 @@ def main():
     token = env("TELEGRAM_BOT_TOKEN")
     if not token:
         raise SystemExit("falta TELEGRAM_BOT_TOKEN")
-    if not chats_permitidos():
-        raise SystemExit("falta TELEGRAM_ALLOWED_CHAT_IDS: sin eso el bot no le contesta a nadie")
     prompt = cargar_prompt()
     mem = cargar_memoria()
-    print("bot gestor arriba; motores:", [m["nombre"] for m in motores_config()], flush=True)
-    offset = 0
+    offset = None
     while True:
         try:
-            r = tg(token, "getUpdates", {"offset": offset, "timeout": 50,
-                                         "allowed_updates": ["message", "callback_query"]})
-            for u in r.get("result", []):
+            ups = tg(token, "getUpdates", {"offset": offset, "timeout": 50}, timeout=70)
+            for u in ups.get("result", []):
                 offset = u["update_id"] + 1
-                if u.get("callback_query"):
-                    atender_boton(token, u["callback_query"])
-                    continue
-                msg = u.get("message")
-                if not msg:
-                    continue
-                resp = atender(token, msg, prompt, mem)
-                if isinstance(resp, dict):
-                    enviar(token, msg["chat"]["id"], resp["texto"], resp["botones"])
-                elif resp:
-                    enviar(token, msg["chat"]["id"], resp)
-        except KeyboardInterrupt:
-            break
+                atender(token, u, prompt, mem)
         except Exception as e:
-            print("error en el ciclo:", type(e).__name__, str(e)[:200], file=sys.stderr, flush=True)
+            print(f"error en loop: {e}", file=sys.stderr)
             time.sleep(5)
 
 
