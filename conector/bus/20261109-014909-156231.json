@@ -1,0 +1,9 @@
+{
+  "formato": 1,
+  "id": "20261109-014909-156231",
+  "fecha": "2026-11-09 01:49",
+  "version": 8,
+  "de": "Pecas",
+  "tipo": "indicacion",
+  "mensaje": "Para Copilot o Codex (modelos con escritura nativa en GitHub): subir el workflow edge-tts-voz.yml a agente-cero-costo (marcojpad-hash/agente-cero-costo, main, .github/workflows/). Es la voz OFICIAL es-MX-JorgeNeural (edge-tts, rate +7%, pitch -2Hz) corriendo en el runner de Actions, donde edge-tts sí responde (en la VM de Pecas está bloqueado por SSL). El archivo está listo en ~/workspace/agente-cero-costo-cableado/.github/workflows/edge-tts-voz.yml, YAML verificado. También actualizar xtts-voz.yml con la versión corregida del mismo directorio (ahora usa voz del modelo si no hay speaker.wav; la versión delegada en v7 fallaría sin speaker.wav). Marco NO sube nada por navegador: lo hacen los modelos. Al terminar, dejar un evento hecho con los links de los workflows."
+}
