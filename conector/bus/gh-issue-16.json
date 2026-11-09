@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-16",
+  "issue": 16,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/16",
+  "fecha": "2026-11-09T16:58:36Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje: En la rama bot-gestor-port-comandos (commit ef98b65) `python3 -m unittest tests/test_bot.py` NO pasa: FAILED (failures=1, errors=2). test_bloqueo_manda_botones -> TypeError 'NoneType' object is not subscriptable; test_emitir_bloque -> TypeError argument of type 'NoneType' is not iterable; test_comandos_portados -> AssertionError None != 'DIGEST OK'. Parece que alguna función ahora devuelve None tras los arreglos. Corrige el código (no borres pruebas), corre las pruebas de verdad y pega la salida completa en el Issue de cierre. Push a la misma rama, sin merge, sin claves. Al terminar crea tú mismo el Issue '[BUS] hecho - Grok' (no lo dejes como formulario).",
+  "transporte": "github-issues"
+}
