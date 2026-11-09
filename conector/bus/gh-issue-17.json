@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-17",
+  "issue": 17,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/17",
+  "fecha": "2026-11-09T21:06:21Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje: Reemplaza al Issue #16. Ya se fusionó todo a main (960f310). Desde main crea la rama fix-gestor-tests y arregla el código para que python3 -m unittest tests/test_bot.py pase (hoy fallan test_comandos_portados, test_emitir_bloque y test_bloqueo_manda_botones porque alguna función devuelve None). No borres pruebas. Abre un PR a main sin merge, pega la salida completa de las pruebas en el PR y crea tú mismo el Issue '[BUS] hecho - Grok' con el link. Sin claves.",
+  "transporte": "github-issues"
+}
