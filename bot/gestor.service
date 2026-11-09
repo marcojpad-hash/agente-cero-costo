@@ -1,0 +1,13 @@
+[Unit]
+Description=Bot gestor de Telegram (agente-cero-costo)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/agente-cero-costo/bot
+EnvironmentFile=%h/agente-cero-costo/bot/.env
+ExecStart=/usr/bin/python3 %h/agente-cero-costo/bot/gestor.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target
