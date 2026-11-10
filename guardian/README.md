@@ -53,10 +53,10 @@ contradicen, vale la regla más nueva y específica.
 
 ### Huecos y contradicciones ya detectados (chequeo G)
 
-- **G1**: `LINEA_EDITORIAL_VISUAL.json` `valores_fijos.voz_fallback` dice "es_MX-ald-medium (Piper, offline)", pero `capcot-narracion` dice "NO uses Piper" y `capcot-qa` la marca puerta dura. El JSON canónico está desactualizado; vale la regla más nueva (Kokoro local / JorgeNeural por Actions).
-- **G2**: `trabajar-con-marco/SKILL.md` dice "el fallback es Piper offline" (línea vieja, anterior a 2026-11-08). Hay que corregirla en la skill.
+- **G1 — CORREGIDO 2026-11-10** (commit `63672453` en CAPCOT): `LINEA_EDITORIAL_VISUAL.json` `valores_fijos.voz_fallback` decía "es_MX-ald-medium (Piper, offline)"; ahora dice "Kokoro em_santa speed 0.85 (local, relevo; Piper PROHIBIDA)". También corregidas la regla editorial de voz y la descripción de capcot-narracion en `pipeline_skills`, y la versión interna (1.0.0 → 1.2.1). El chequeo G1 ahora revisa los 3 puntos.
+- **G2 — CORREGIDO 2026-11-10** (skill local): `trabajar-con-marco/SKILL.md` decía "el fallback es Piper offline" y usaba a Piper como ejemplo de duck typing; ahora el fallback es Kokoro em_santa speed 0.85 y el ejemplo usa Kokoro.
 - **G3**: `DELEGACIONES.md` tiene delegaciones dirigidas PARA: Marco (subir workflows por navegador, activar seguridad manual, crear cuenta Clayzo). Marco NO es el autorizador (corrección 2026-11-08 16:27): hay que reasignarlas a Copilot/Codex por el bus.
-- **G4**: `capcot-frames/SKILL.md` dice de explainroo "NO instalado, NO probado"; se probó el 2026-11-09 con Barreleye (da diagrama vectorial, no lápiz; no se adopta como reemplazo de frames). La skill está desactualizada.
+- **G4 — CORREGIDO 2026-11-10** (skill local + JSON canónico): `capcot-frames/SKILL.md` decía de explainroo "NO instalado, NO probado"; se probó el 2026-11-09 con Barreleye (da diagrama vectorial, no lápiz; no se adopta como reemplazo de frames). Candidato actual: Nano Banana por la app de Gemini (probado 2026-11-10). También actualizado el `estado` de capcot-frames en `LINEA_EDITORIAL_VISUAL.json` (commit `63672453`).
 - **G5**: `PROTOCOLO_CALLBACK.md` dice que `callback-aviso.yml` está "listo para subirlo por navegador con la cuenta de Marco" (regla vieja). La vía es delegar la subida a Copilot/Codex por el bus.
 
 ## Verificación real, no por intento (regla dura)
@@ -97,6 +97,7 @@ Esto evita lo que ya pasó:
 | E. Slots | Árbol de CAPCOT main por API (paquetes con slot pasado y sin MP4) | No repara solo: marca ATORADO; la verificación es que el MP4 aparezca en el repo |
 | F. Estado del bus | `estado.json` y el directorio `conector/bus/` por API | Los archivos regenerados se verifican por relectura local; el estado en main solo queda verificado cuando el workflow haga commit/push y la próxima corrida lo lea |
 | G. Huecos | Los contratos mismos, leídos de main y de las skills locales | No repara: marca `HUECO_CONTRATO`; la verificación es que el documento se corrija |
+| H. Línea editorial | Árbol de CAPCOT main por API (`cola/entrada/*/storyboard.json` + `data/rotacion.json` + `LINEA_EDITORIAL_VISUAL.json`) | No repara: marca el paquete en el reporte; la verificación es que el `storyboard.json` se corrija (estilo distinto al anterior, en catálogo, `no text` en los prompts) |
 
 ### Límite honesto: verificación entre repos
 
@@ -149,7 +150,8 @@ abrió: la automatización de Grok solo muestra el formulario, no lo envía.
 | D. Workflows fallidos | PLAN_MAESTRO §4 (fallo → reintento máx. 2 → FALLIDO y cápsula de reserva) + trabajar-con-marco (nunca "no se puede" sin análogo) | Runs con `failure` en las últimas 24 h (3 repos) | Clasifica la causa (YAML, secreto, test) y propone el parche en el reporte |
 | E. Slots perdidos | LINEA_EDITORIAL_VISUAL.json revision_diaria (relevo automático al detectar que no hubo publicación) + COORDINACION §6 | Paquete con slot pasado y sin MP4 | Lo marca ATORADO en el reporte para la revisión diaria (no remonta: eso es de Imaginantes o de un relevo con clips) |
 | F. Estado desactualizado | bus (conector/ESTADO.md es el tablero vigente) | `estado.json` con versión menor que el evento más nuevo del bus | Regenera `estado.json`/`ESTADO.md` desde el evento nuevo (su propio repo) |
-| G. Huecos en el contrato | Los propios contratos (CONTRATOS en `guardian.py`) | Caso sin regla, o dos contratos que se contradicen | **No repara inventando la regla**: marca `HUECO_CONTRATO` con qué documento hay que escribir o corregir. Los huecos ya detectados están listados arriba (G1–G5) |
+| G. Huecos en el contrato | Los propios contratos (CONTRATOS en `guardian.py`) | Caso sin regla, o dos contratos que se contradicen | **No repara inventando la regla**: marca `HUECO_CONTRATO` con qué documento hay que escribir o corregir. Los huecos ya detectados están listados arriba (G1–G5; G1, G2 y G4 corregidos 2026-11-10) |
+| H. Línea editorial en cola/entrada/ | LINEA_EDITORIAL_VISUAL.json reglas_editoriales + catalogo_estilos + BIBLIA_LINEA_EDITORIAL.md + capcot-qa (puertas duras de línea editorial, 2026-11-10) | Paquete con `estilo_id` que repite el estilo anterior, fuera del catálogo, o con `image_prompt` sin "no text" | **No repara**: lo marca en el reporte para la revisión diaria, que lo devuelve al modelo que escribió el paquete con la regla citada |
 
 ## Cómo corre
 

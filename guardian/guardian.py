@@ -43,6 +43,9 @@ algo, deja el evento en el bus):
   D. Workflows de Actions fallidos en los 3 repos (últimas 24 h).
   E. Cápsulas con slot perdido sin MP4 (cola de CAPCOT).
   F. Estado del bus desactualizado (ESTADO.md viejo con eventos nuevos).
+  G. Huecos y contradicciones entre contratos (G1-G5).
+  H. Línea editorial en cola/entrada/ (estilo repetido del anterior,
+     estilo fuera del catálogo, image_prompt sin "no text").
 
 Modos:
   --check   solo lee y escribe el reporte (no repara nada).
@@ -137,29 +140,32 @@ CONTRATOS = {
         ],
     },
     "linea_editorial": {
-        "ruta": "capcot-capsulas-imaginantes/docs/LINEA_EDITORIAL_VISUAL.json v1.2",
-        "nota": "JSON canónico: valores fijos, reglas editoriales, 50 estilos, pipeline de skills, revisión diaria.",
+        "ruta": "capcot-capsulas-imaginantes/docs/LINEA_EDITORIAL_VISUAL.json v1.2.1 (2026-11-10)",
+        "nota": "JSON canónico: valores fijos, reglas editoriales, 50 estilos, pipeline de skills, revisión diaria. v1.2.1 corrige el fallback de voz (Kokoro em_santa; Piper PROHIBIDA) y la versión interna.",
         "reglas": [
-            "valores_fijos: 9:16, 1080x1920, 30 fps, 60-95 s (objetivo 75-90), 6 escenas de ~10 s, -14 LUFS, voz oficial es-MX-JorgeNeural +7%/-2Hz, cierre 'Esto fue Datos y ociosidades.', cortinilla de fuentes 6 s.",
+            "valores_fijos: 9:16, 1080x1920, 30 fps, 60-95 s (objetivo 75-90), 6 escenas de ~10 s, -14 LUFS, voz oficial es-MX-JorgeNeural +7%/-2Hz, voz_fallback Kokoro em_santa speed 0.85 (Piper PROHIBIDA), cierre 'Esto fue Datos y ociosidades.', cortinilla de fuentes 6 s.",
+            "reglas_editoriales: un estilo por cápsula del catálogo, NUNCA el de la cápsula anterior; 9:16 con sujeto grande y sin texto dentro de la imagen (el image_prompt siempre termina en 'vertical 9:16, no text'); rigor DATO/INFERENCIA (no se inventan datos, fuentes ni DOIs); la plantilla visual sale del catálogo (prompt_base), no se inventa un estilo nuevo.",
+            "Subtítulos oficiales (scripts/montar_capsula.py ass_from_srt + decisión de Marco 2026-11-09): DejaVu Sans 72, negrita, Outline 6, Shadow 2, MarginV 620, blancos sin recuadro.",
             "revision_diaria: por lo menos una vez al día; revisar publicaciones de hoy, cola sin procesar, si Imaginantes publicó o está detenido. Si Imaginantes deja de publicar, el relevo es automático al detectar que no hubo publicación (no espera a que alguien lo pida).",
             "creditos_imaginantes: Imaginantes ya se pausó antes por créditos y la cola se atascó; hay que estar al pendiente.",
         ],
     },
     "capcot_qa": {
         "ruta": "~/workspace/custom-skills/capcot-qa/SKILL.md",
-        "nota": "Puertas duras (corrección de Marco 2026-11-08 19:18).",
+        "nota": "Puertas duras (corrección de Marco 2026-11-08 19:18; puertas de línea editorial añadidas 2026-11-10).",
         "reglas": [
             "PUERTA DURA de duración: la duración real debe estar a ±5 s del target_duration_seconds del storyboard.json. Si no, NO PASA.",
             "PUERTA DURA de voz: voz rechazada (Piper es_MX-ald-medium, es_ES-sharvard-medium, es_MX-claude-high) = NO PASA. Huecos largos de silencio = NO PASA.",
+            "PUERTA DURA de línea editorial (2026-11-10): estilo repetido de la cápsula anterior = NO PASA; texto dentro de la imagen (image_prompt sin 'no text' o frame con texto quemado) = NO PASA; dato sin fuente o DOI que no resuelve = NO PASA; subtítulos fuera del estilo oficial (DejaVu Sans 72 negrita, Outline 6, Shadow 2, MarginV 620, blancos sin recuadro) = NO PASA.",
             "No existe 'PASA como borrador' cuando una puerta dura falla: el video vuelve a la skill que lo arregla.",
         ],
     },
     "capcot_narracion": {
         "ruta": "~/workspace/custom-skills/capcot-narracion/SKILL.md",
-        "nota": "Voz local Kokoro; Piper prohibida.",
+        "nota": "Voz local Kokoro; Piper prohibida. Voz local actual: em_santa speed 0.85 (Marco aprobó en Mpemba v2 2026-11-09; em_alex rechazada).",
         "reglas": [
             "Voz oficial: es-MX-JorgeNeural (edge-tts +7%/-2Hz). En la VM edge-tts está bloqueado por SSL.",
-            "Voz local: Kokoro-82M (em_alex; también em_santa, ef_dora). Reemplaza a Piper, que Marco rechazó.",
+            "Voz local: Kokoro-82M (em_santa speed 0.85; también em_alex — rechazada por Marco — y ef_dora). Reemplaza a Piper, que Marco rechazó.",
             "NO uses Piper. Las tres voces Piper están rechazadas y son puerta dura de QA.",
             "Voz oficial por Actions: workflow edge-tts-voz.yml genera la JorgeNeural real en el runner.",
         ],
@@ -174,7 +180,7 @@ CONTRATOS = {
     },
     "capcot_frames": {
         "ruta": "~/workspace/custom-skills/capcot-frames/SKILL.md",
-        "nota": "Una imagen por escena, 9:16, sin texto dentro de la imagen.",
+        "nota": "Una imagen por escena, 9:16, sin texto dentro de la imagen. explainroo PROBADO 2026-11-09 (diagrama vectorial, no lápiz; no adoptado). Candidato actual: Nano Banana por la app de Gemini.",
         "reglas": [
             "El image_prompt de cada escena se usa tal cual está en el storyboard.json; no se reescribe el estilo.",
             "Si el generador no corre en esta VM, dilo con el error concreto y dónde sí corre.",
@@ -200,7 +206,7 @@ CONTRATOS = {
     },
     "trabajar_con_marco": {
         "ruta": "~/workspace/custom-skills/trabajar-con-marco/SKILL.md",
-        "nota": "Cómo trabajar con Marco. (OJO: su línea 'el fallback es Piper' quedó desactualizada el 2026-11-08; valen capcot-narracion y capcot-qa.)",
+        "nota": "Cómo trabajar con Marco. (G2 corregido 2026-11-10: el fallback es Kokoro em_santa, no Piper.)",
         "reglas": [
             "Nunca digas que no se puede sin haber probado el análogo o el fallback y sin haber dejado el intento en el repo.",
             "Cuando algo no se puede aquí, di dónde sí se puede: en el box, en Actions, en otra máquina, con otra clave, con otro modelo.",
@@ -799,22 +805,45 @@ def chequeo_huecos_contrato(token, skills_dir):
                           "detalle": detalle, "que_falta": que_falta})
 
     # G1 — LINEA_EDITORIAL_VISUAL.json: voz_fallback = Piper (desactualizado)
+    # Revisa los 3 puntos donde Piper aparecía como fallback (corregidos
+    # 2026-11-10 a Kokoro em_santa): valores_fijos.voz_fallback, la regla
+    # editorial de voz y pipeline_skills narracion. La mención "Piper
+    # PROHIBIDA" NO dispara el hueco: es la prohibición, no el fallback.
     lev = gh_raw(OWNER, "capcot-capsulas-imaginantes",
                  "docs/LINEA_EDITORIAL_VISUAL.json")
     if lev:
         try:
             d = json.loads(lev)
             fb = (d.get("valores_fijos", {}) or {}).get("voz_fallback", "")
-            if "Piper" in fb or "ald-medium" in fb:
+            regla_voz = next((r for r in d.get("reglas_editoriales", [])
+                              if r.startswith("La voz es")), "")
+            narr = next((s.get("hace", "") for s in
+                         d.get("pipeline_skills", {}).get("skills", [])
+                         if s.get("id") == "capcot-narracion"), "")
+            if "ald-medium" in fb:
                 hueco(
                     "G1", "linea_editorial vs capcot-narracion / capcot-qa",
                     "docs/LINEA_EDITORIAL_VISUAL.json valores_fijos.voz_fallback "
                     f"dice '{fb}', pero capcot-narracion dice 'NO uses Piper' "
                     "y capcot-qa la marca puerta dura (voz rechazada = NO PASA).",
                     "Corregir valores_fijos.voz_fallback en el JSON canónico "
-                    "a Kokoro em_alex (local) / edge-tts JorgeNeural (Actions). "
-                    "Mientras tanto vale la regla más nueva: capcot-narracion "
-                    "y capcot-qa (2026-11-08).")
+                    "a Kokoro em_santa speed 0.85 (local) / edge-tts "
+                    "JorgeNeural (Actions). Mientras tanto vale la regla más "
+                    "nueva: capcot-narracion y capcot-qa (2026-11-08).")
+            if "fallback Piper" in regla_voz:
+                hueco(
+                    "G1", "linea_editorial vs capcot-narracion / capcot-qa",
+                    "docs/LINEA_EDITORIAL_VISUAL.json reglas_editoriales "
+                    "sigue diciendo que el fallback es Piper.",
+                    "Corregir la regla de voz a Kokoro em_santa speed 0.85 "
+                    "(Piper prohibida, puerta dura de QA).")
+            if "Piper es_MX-ald-medium" in narr:
+                hueco(
+                    "G1", "linea_editorial vs capcot-narracion / capcot-qa",
+                    "docs/LINEA_EDITORIAL_VISUAL.json pipeline_skills "
+                    "capcot-narracion sigue diciendo que narra con Piper.",
+                    "Corregir a Kokoro em_santa speed 0.85 en relevo "
+                    "(Piper PROHIBIDA).")
         except ValueError:
             pass
     else:
@@ -823,18 +852,22 @@ def chequeo_huecos_contrato(token, skills_dir):
               "Verificar que el archivo sigue en main.")
 
     # G2 — trabajar-con-marco: "el fallback es Piper" (desactualizado)
+    # Revisa las 2 líneas donde Piper aparecía (corregidas 2026-11-10 a
+    # Kokoro em_santa): el ejemplo de duck typing y la regla de fallback.
     # Solo verificable en local: las skills viven en la VM, no en un repo.
     if skills_dir:
         tcm = skills_dir / "trabajar-con-marco" / "SKILL.md"
         try:
             txt = tcm.read_text(encoding="utf-8")
-            if "fallback es Piper" in txt:
+            if "fallback es Piper" in txt or "Piper hace esa función" in txt:
                 hueco(
                     "G2", "trabajar-con-marco vs capcot-narracion / capcot-qa",
                     "trabajar-con-marco/SKILL.md dice 'el fallback es Piper "
-                    "offline', pero Piper está prohibida desde 2026-11-08.",
+                    "offline' (o usa a Piper como ejemplo), pero Piper está "
+                    "prohibida desde 2026-11-08.",
                     "Corregir esa línea en la skill: el fallback es Kokoro "
-                    "local; la voz oficial por Actions es JorgeNeural.")
+                    "em_santa speed 0.85 local; la voz oficial por Actions "
+                    "es JorgeNeural.")
         except OSError:
             pass
     else:
@@ -909,6 +942,92 @@ def chequeo_huecos_contrato(token, skills_dir):
     return hallazgos
 
 
+# ---------------------------------------------------------------- chequeo H
+def chequeo_linea_editorial(token):
+    """H. Línea editorial: paquetes en cola/entrada/ contra
+    LINEA_EDITORIAL_VISUAL.json (rotación de estilo, estilo en catálogo,
+    'no text' en los image_prompt).
+    Fuente: LINEA_EDITORIAL_VISUAL.json reglas_editoriales + catalogo_estilos
+    ("nunca se repite el estilo de la cápsula anterior"; "sin texto dentro
+    de la imagen"; "la plantilla visual sale del catálogo") +
+    BIBLIA_LINEA_EDITORIAL.md ("un estilo por cápsula, que salga del
+    catálogo y que no sea el de la anterior") + data/rotacion.json (último
+    estilo publicado) + capcot-qa (puertas duras de línea editorial,
+    2026-11-10).
+    Solo reporta (no repara): cambiar el estilo de un paquete es decisión
+    del modelo que lo escribió; el guardián lo marca para la revisión
+    diaria, que lo devuelve al modelo con la regla citada."""
+    print("[H] Línea editorial en cola/entrada/...")
+    hallazgos = []
+    lev_txt = gh_raw(OWNER, "capcot-capsulas-imaginantes",
+                     "docs/LINEA_EDITORIAL_VISUAL.json")
+    estilos_catalogo = set()
+    if lev_txt:
+        try:
+            d = json.loads(lev_txt)
+            estilos_catalogo = set(
+                (d.get("catalogo_estilos", {}) or {}).get("estilos", {}).keys())
+        except ValueError:
+            pass
+    # Estilo de la última cápsula publicada (data/rotacion.json).
+    estilo_anterior = None
+    rot_txt = gh_raw(OWNER, "capcot-capsulas-imaginantes",
+                     "data/rotacion.json")
+    if rot_txt:
+        try:
+            rot = json.loads(rot_txt)
+            if isinstance(rot, list) and rot:
+                estilo_anterior = (rot[-1] or {}).get("estilo")
+        except ValueError:
+            pass
+    arbol = gh_api(f"/repos/{OWNER}/capcot-capsulas-imaginantes/git/trees/main?recursive=1",
+                   token)
+    if not arbol:
+        return [{"paquete": "(árbol no legible)",
+                 "detalle": f"{NO_VERIFICADO}: no se pudo leer el árbol de CAPCOT main."}]
+    rutas = {t.get("path", ""): t for t in arbol.get("tree", [])}
+    paquetes = sorted({p.split("/")[2] for p in rutas
+                       if p.startswith("cola/entrada/") and p.count("/") >= 2})
+    estilo_previo = estilo_anterior
+    for pkg in paquetes:
+        sb_txt = gh_raw(OWNER, "capcot-capsulas-imaginantes",
+                        f"cola/entrada/{pkg}/storyboard.json")
+        if not sb_txt:
+            continue
+        try:
+            sb = json.loads(sb_txt)
+        except ValueError:
+            hallazgos.append({"paquete": pkg,
+                              "detalle": "storyboard.json no es JSON válido."})
+            continue
+        estilo = sb.get("estilo_id")
+        if not estilo:
+            hallazgos.append({"paquete": pkg,
+                              "detalle": "storyboard.json sin estilo_id."})
+            continue
+        if estilos_catalogo and estilo not in estilos_catalogo:
+            hallazgos.append({
+                "paquete": pkg,
+                "detalle": f"estilo_id '{estilo}' fuera del catálogo "
+                           "(LINEA_EDITORIAL_VISUAL.json catalogo_estilos)."})
+        if estilo_previo and estilo == estilo_previo:
+            hallazgos.append({
+                "paquete": pkg,
+                "detalle": f"estilo_id '{estilo}' REPITE el estilo anterior "
+                           "(rotación obligatoria: nunca el estilo de la "
+                           "cápsula anterior; capcot-qa puerta dura)."})
+        estilo_previo = estilo
+        for esc in sb.get("scenes", []) or []:
+            prompt = esc.get("image_prompt", "") or ""
+            if "no text" not in prompt.lower():
+                hallazgos.append({
+                    "paquete": pkg,
+                    "detalle": f"escena {esc.get('id', '?')}: image_prompt "
+                               "sin 'no text' (línea editorial: sin texto "
+                               "dentro de la imagen)."})
+    return hallazgos
+
+
 # ---------------------------------------------------------------- reporte
 def emitir_evento_bus(repo_root, tipo, mensaje, token=None):
     """Deja un evento en conector/bus/ (lo commitea el workflow o Pecas)."""
@@ -957,7 +1076,7 @@ def main():
               f"Modo: {'repair (repara solo)' if reparar else 'check (solo lectura)'}",
               ""]
     resumen = {"reparado": 0, "pendiente": 0, "necesita_marco": 0,
-               "hueco_contrato": 0, "no_verificado": 0}
+               "hueco_contrato": 0, "no_verificado": 0, "linea_editorial": 0}
 
     def anotar(texto, clave):
         lineas.append(texto)
@@ -1118,6 +1237,17 @@ def main():
         resumen["hueco_contrato"] += 1
     lineas.append("")
 
+    # H — línea editorial en la cola
+    lineas.append("## H. Línea editorial en cola/entrada/")
+    lineas.append("Fuente: LINEA_EDITORIAL_VISUAL.json reglas_editoriales + catalogo_estilos (rotación obligatoria; sin texto en la imagen; estilo del catálogo) + BIBLIA_LINEA_EDITORIAL.md + capcot-qa (puertas duras de línea editorial, 2026-11-10). Solo reporta: cambiar el estilo de un paquete es del modelo que lo escribió; la revisión diaria lo devuelve con la regla citada.")
+    h_linea = chequeo_linea_editorial(token)
+    for h in h_linea:
+        lineas.append(f"- {h['paquete']}: {h['detalle']}")
+        resumen["linea_editorial"] += 1
+    if not h_linea:
+        lineas.append("- Sin paquetes que violen la línea editorial.")
+    lineas.append("")
+
     # Resumen y estado
     lineas.append("## Resumen")
     lineas.append(f"- Reparado solo (verificado en el estado real): {resumen['reparado']}")
@@ -1125,6 +1255,7 @@ def main():
     lineas.append(f"- {NECESITA_MARCO}: {resumen['necesita_marco']}")
     lineas.append(f"- {NO_VERIFICADO}: {resumen['no_verificado']} (reparación intentada sin confirmar en el estado real, o estado que no se pudo leer; NO se da por hecho ni por verde)")
     lineas.append(f"- {HUECO_CONTRATO}: {resumen['hueco_contrato']} (reglas por escribir o corregir, no inventadas por el guardián)")
+    lineas.append(f"- Línea editorial (H): {resumen['linea_editorial']} paquetes en cola que violan la línea editorial (estilo repetido, fuera del catálogo o sin 'no text')")
     lineas.append("")
     lineas.append("Lo que el guardián NO hace: no publica, no hace merge, "
                  "no toca Engine V5 ni el catálogo 244 del motor, no pide "
