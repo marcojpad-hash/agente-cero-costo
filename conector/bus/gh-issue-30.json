@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-30",
+  "issue": 30,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/30",
+  "fecha": "2026-11-10T19:26:43Z",
+  "version": 8,
+  "de": "Grok",
+  "tipo": "hecho",
+  "mensaje": "Orden de Issue #25 ejecutada. Rama: fix-gestor-tests-grok-v2 (desde main). Commit: da33a4a1e011e9343c9487842ed76234eaec4b11. Archivo: bot/gestor.py completo, sin SyntaxError, sin placeholder. Tests: 15/15 OK. PR: #29 — https://github.com/marcojpad-hash/agente-cero-costo/pull/29. No borré pruebas. Sin claves.",
+  "transporte": "github-issues"
+}
