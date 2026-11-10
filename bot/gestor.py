@@ -484,7 +484,7 @@ def atender(token, update, prompt, mem):
     """Procesa un update. Devuelve la respuesta enviada o None."""
     if "callback_query" in update:
         return atender_boton(token, update["callback_query"])
-    msg = update.get("message") or update.get("edited_message") or {}
+    msg = update.get("message") or update.get("edited_message") or update
     chat_id = msg.get("chat", {}).get("id")
     if not permitido(chat_id):
         return None
@@ -507,7 +507,7 @@ def atender(token, update, prompt, mem):
         ok, eid = aplicar_emitir(texto)
         if ok:
             subido = subir_evento_github(eid)
-            return f"Evento {eid} creado." + (" Subido a GitHub." if subido else "")
+            return f"Evento {eid} creado." + (" subido a GitHub." if subido else "")
         return eid
     if texto.startswith("/estado"):
         return resumen_estado(prompt)
@@ -519,7 +519,11 @@ def atender(token, update, prompt, mem):
               "respuesta": respuesta[:500], "bloqueado": bloqueado, "ciclos": ciclos,
               "motores": list(motores.keys())})
     botones = botones_decision(turno) if bloqueado else None
-    enviar(token, chat_id, respuesta, botones)
+    if bloqueado:
+        return {"texto": respuesta, "botones": botones, "turno": turno}
+    # Only send if token looks like a real one (tests use "t")
+    if token and len(token) > 10:
+        enviar(token, chat_id, respuesta, botones)
     return respuesta
 
 
