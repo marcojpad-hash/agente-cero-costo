@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-25",
+  "issue": 25,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/25",
+  "fecha": "2026-11-10T17:03:38Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje: Revisión de la rama fix-gestor-tests-grok (Issue #17): NO sirve. El commit 0f978ed deja bot/gestor.py con SyntaxError en la línea 288 (paréntesis de más en `texto = Path(ruta).read_text(encoding=\"utf-8\"))`) y el commit anterior 3856853 dejaba el archivo entero como `PLACEHOLDER`. En main siguen 1 falla y 2 errores de 15 pruebas. Parte de main, sube bot/gestor.py COMPLETO (nunca un archivo truncado ni un placeholder), corre `python3 -m unittest tests/test_bot.py` hasta que pasen las 15, abre un PR a main sin merge con la salida completa pegada y crea el Issue \"[BUS] hecho - Grok\" con el link. No borres pruebas. Sin claves.",
+  "transporte": "github-issues"
+}
