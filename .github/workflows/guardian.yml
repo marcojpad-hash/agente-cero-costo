@@ -1,0 +1,51 @@
+# Guardián — vigilante del stack (agente-cero-costo / CAPCOT / Motor U6)
+#
+# Principio: trabaja sin Marco. No espera. Solo escala lo imposible.
+# Corre cada 6 horas y a mano (workflow_dispatch). Lee el bus, los Issues,
+# las ramas, los runs de Actions y la cola de CAPCOT; repara solo lo que
+# puede con GITHUB_TOKEN y deja el reporte + los eventos en el bus.
+# No publica, no hace merge, no toca Engine V5 ni el catálogo 244.
+name: guardian
+
+on:
+  schedule:
+    - cron: "17 0,6,12,18 * * *"  # cada 6 h (18:17, 00:17, 06:17, 12:17 CST aprox)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Correr el guardián (repara solo)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 guardian/guardian.py --repair \
+            --repo-root . \
+            --salida guardian
+
+      - name: Commitear reporte, estado y eventos
+        run: |
+          git config user.name "Guardian"
+          git config user.email "guardian@agente-cero-costo.local"
+          git add guardian/reporte-*.md guardian/estado.json \
+                  guardian/reemision-pendiente-*.md \
+                  conector/estado.json conector/ESTADO.md \
+                  conector/bus/*.json 2>/dev/null || true
+          git diff --cached --quiet && echo "Sin cambios que commitear." || \
+            git commit -m "Guardian: reporte $(date -u +%Y-%m-%d\ %H:%M) UTC"
+          git push
