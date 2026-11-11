@@ -1,0 +1,66 @@
+name: supervisor-reutilizable
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  supervisar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar requirements si existen
+        run: |
+          if ls requirements*.txt 1> /dev/null 2>&1; then
+            pip install -r requirements.txt || true
+          fi
+
+      - name: Chequeo de sintaxis y placeholders
+        run: |
+          git diff --name-only HEAD~1 HEAD | grep '\.py$' | while read f; do
+            python -m compileall -q "$f" || exit 1
+            if grep -q PLACEHOLDER "$f" || [ $(wc -c < "$f") -lt 50 ]; then
+              echo "Fallo: placeholder o archivo vacío en $f"
+              exit 1
+            fi
+          done
+
+      - name: Pruebas
+        run: |
+          if [ -d tests ]; then
+            if command -v pytest >/dev/null; then
+              pytest -q || exit 1
+            else
+              python -m unittest discover -s tests || exit 1
+            fi
+          fi
+
+      - name: Smokes
+        run: |
+          find . -name 'smoke*' -o -name '*smoke*.py' | head -5 | while read s; do
+            if [ -f "$s" ]; then
+              bash "$s" || python "$s" || exit 1
+            fi
+          done
+          if [ -f supervisor.smoke ]; then
+            bash supervisor.smoke || exit 1
+          fi
+
+      - name: Crear issue si falla
+        if: failure()
+        run: |
+          echo "Fallo detectado. Crear issue en agente-cero-costo."
+          # Aquí iría la lógica para crear issue con gh o API, usando GITHUB_TOKEN
+          # Por ahora placeholder seguro sin claves
