@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-64",
+  "issue": 64,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/64",
+  "fecha": "2026-11-11T18:51:45Z",
+  "version": 8,
+  "de": "Puta3: cerrar punto 2 (guardián Z90 en correr_estandar + previo_error Mozart)",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje:\n\nObjetivo: cerrar el punto 2 (ventanas móviles / modo predictivo) de la auditoría de trazabilidad.\nRepo: marcojpad-hash/motor-u6-storage, rama vigente `alterno/cameo-pesos`. No tocar Engine_V5_CANONICO_SOLO.py ni patterns_final_v14.json (244).\n\nContexto: el modo predictivo ya existe (no ve el caso completo, solo cortes anteriores a Z90). Faltan dos cosas:\n\n1. Cablear el guardián de Z90 al comando `correr_estandar`. Hoy el guardián vigila la Z (con las fechas del sobre) pero no está conectado al ejecutable que corre los casos. Si un caso intenta meter datos post-Z en modo predictivo, el comando debe rechazarlo con código de salida 8. Incluir test que lo pruebe (caso con corte post-Z → exit 8; caso limpio → pasa).\n2. Arreglar la prueba de corte retenido de Mozart: falla porque a `efectividad_corte_retenido` le falta el campo `previo_error`. Revisar el diccionario de salida, agregar el campo (None/False si no hay error previo) y volver a correr la prueba hasta verde.\n\nRegla de entrega: no vale \"ya quedó\" sin recibo de la corrida y test en verde. Si algo falla, indicar archivo y línea. Al terminar: commit en la rama, PR sin mergear, y comentar aquí el hash + \"[BUS] hecho - Grok\" con enlaces a la evidencia.",
+  "transporte": "github-issues"
+}
