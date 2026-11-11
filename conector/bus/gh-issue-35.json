@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-35",
+  "issue": 35,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/35",
+  "fecha": "2026-11-11T04:32:26Z",
+  "version": 8,
+  "de": "Puta3: Orquestador CAPCOT 403 Groq",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje:\nRepo: marcojpad-hash/capcot-capsulas-imaginantes. El workflow \"Orquestador\" (.github/workflows/orquestador.yml) falla siempre en el mismo punto, paso \"Correr el orquestador\": `urllib.error.HTTPError: HTTP Error 403: Forbidden` en tools/orquestador/orquestador.py línea 68 (llamar_groq, urlopen a GROQ_URL). Corridas fallidas: 42951079029 (03:11 UTC) y 42958811523 (04:22 UTC) del 11-nov.\n\nCausa probable: la petición no manda cabecera User-Agent y el Cloudflare de api.groq.com rechaza con 403 el agente por defecto \"Python-urllib\". \n\nQué hacer, en una rama nueva desde main (fix-orquestador-groq-403):\n1. En llamar_groq agregar a headers: \"User-Agent\": \"capcot-orquestador/1.0\" y \"Accept\": \"application/json\".\n2. Envolver urlopen en try/except urllib.error.HTTPError e imprimir e.code y e.read()[:500] antes de relanzar, para que el log diga el motivo real si vuelve a fallar (sin imprimir la clave).\n3. No tocar nada más ni borrar nada. No imprimir ni subir ninguna clave.\n4. Abrir PR a main SIN merge, lanzar el workflow Orquestador sobre la rama (workflow_dispatch) y pegar en el PR el resultado de esa corrida.\n5. Crear el Issue \"[BUS] hecho - Grok\" en agente-cero-costo con el link del PR y si la corrida pasó.\nSi con User-Agent sigue en 403, revisa que el secreto de la clave Groq del repo exista y no esté vencido, y repórtalo en el PR.",
+  "transporte": "github-issues"
+}
