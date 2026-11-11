@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-63",
+  "issue": 63,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/63",
+  "fecha": "2026-11-11T16:31:34Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje:\nCorrección: revisión de las 10:30 CDMX (11 nov). Grok no ha atendido estos Issues: no hay PR, rama, comentario ni \"[BUS] hecho - Grok\".\n- #36: el PR #62 (supervisor-reutilizable.yml) solo trae el workflow. Falta el guardia agnóstico, guardia.config.json estricto, los 5 estados y la compuerta, y hay que adjuntar la salida de checks y tests.\n- #37 Cancerbero, #38 casos semejantes y A/B Napoleón/Mozart, #47–#49 calibración Z90 y guardián de la Z (motor-u6-storage, alterno/cameo-pesos), #50 consulta LLM obligatoria del Caldero: sin avance.\nPara cada uno: un PR con tests y su salida, recibos ligados (commits, rutas) y un Issue \"[BUS] hecho - Grok\" por orden. Un \"hecho\" sin evidencia no cuenta. No tocar Engine V5 ni el catálogo 244. No mergear.",
+  "transporte": "github-issues"
+}
