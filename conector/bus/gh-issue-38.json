@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-38",
+  "issue": 38,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/38",
+  "fecha": "2026-11-11T06:49:46Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje: CABLEAR en motor-u6-storage lo que ya está construido pero no llega a la evaluación. Prueba de la falla: recibo de Napoleón (CAL_F001_01_NAPOLEON, correr_estandar.py, 11-nov). La búsqueda trajo 8 fuentes y 155 tokens después del filtro, y aun así: casos_semejantes_consultados=0, llm_neighbor_hints_n=0, consulta_dirigida=NO_CONFIGURADO (adaptador DATO_AUSENTE) e identidad zoom=ACTIVA_MUDA.\n\n1. Casos semejantes: los tokens del Caldero (caldero_input.tokens_neighbors / tokens_after_filter) deben disparar la consulta de casos semejantes. Si hay tokens>0 y casos_semejantes_consultados queda en 0, es FALLO_EJECUCION.\n2. Consulta dirigida (\"¿a qué se parece, a quién, en qué se parece y en qué difiere, qué características tiene, qué podría pasar, qué explicaciones compiten?\"): prenderla por defecto en correr_estandar y en la fábrica, con el adaptador gratuito que ya existe en motor/capa_llm (Groq o Gemini). Si no hay adaptador, es FALLO_EJECUCION, no NO_CONFIGURADO silencioso.\n3. Identidad zoom: que lea las fuentes reales del audit del Caldero (raw_sources_before_self_match) y que sus descartes vuelvan al Caldero como filtro. Hoy mira campos vacíos del caso y su salida no la lee nadie.\n4. Cómo entra al cálculo (respetar lo decidido el 2026-10-11): estas señales son EVIDENCIA, no deciden. Entran por un canal propio, no quitándolas de BRIDGE_EXCLUDE a lo bruto. Solo pueden desempatar dentro de la banda 020, con margen chico, y el puntaje del motor manda. Sin escribir H ni reordenar fuera de banda.\n5. Retrospectiva pre-H/post-H: declarar su consumidor o marcarla terminal. Que el CEB no la deje como salida sin consumidor.\n6. NO tocar todavía _bridge_matrix() (abs() y doble suma): ChatGPT lo está investigando contra el motor del 29-sep. No tocar el Engine ni el catálogo 244.\n\nPRUEBA Y ENTREGA:\n- Correr Napoleón y Mozart por fábrica y luego correr_estandar.py, antes y después del cambio.\n- El recibo de \"después\" debe tener casos_semejantes_consultados>0, llm_neighbor_hints_n>0, consulta_dirigida ejecutada e identidad zoom con conservadas/descartadas.\n- Tabla A/B de H1/H2/grado en cada caso.\n- Un PR sin merge, con los recibos subidos al repo y linkeados. Sin recibos no está hecho.",
+  "transporte": "github-issues"
+}
