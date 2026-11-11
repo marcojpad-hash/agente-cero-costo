@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-50",
+  "issue": 50,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/50",
+  "fecha": "2026-11-11T12:54:54Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje:\nRepo motor-u6-storage, rama alterno/cameo-pesos. NO tocar Engine_V5_CANONICO_SOLO.py ni patterns_final_v14.json (244). No mergear PRs.\n\nContexto: auditoría de las 5 corridas de calibración (Mozart, Galileo, Hawking, Che, MLK). La búsqueda web del Caldero sí corre (EJECUTADO) antes de H, pero la consulta dirigida al LLM NUNCA corrió: llm=False, consulta_dirigida NO_CONFIGURADO/off, filtro_017.llamadas_llm=0, 0 hints. Además entraron fuentes basura (Hawking: Instituto Coreano Argentino, Panama Canal Authority; Che: NBA, McCartney, bin Laden; pieza de Che ACTIVA_MUDA por ENTRADA_VACIA). Ninguna pieza es adorno: hay que cablearlas y ajustar contratos para que se ejecuten.\n\nOrden:\n1. Encender y volver OBLIGATORIA la consulta dirigida LLM del Caldero (búsqueda de arquetipos) antes de H1/H2/apuesta. El texto enviado debe ser anónimo y pasar por sombrero blanco + filtro 017 (sin nombres ni fechas).\n2. Ajustar contratos y CEB: si la llamada LLM falta, falla o devuelve 0 hints válidos, la corrida queda FALLO/INCOMPLETA, nunca OK. Evidencia obligatoria en el resultado: hash de request y response, modelo usado, conteo de hints aceptados/rechazados.\n3. Filtro de pertinencia para fuentes web del Caldero; 0 fuentes válidas cuenta como fallo.\n4. Los hints NO deciden H: solo desempatan cuando el margen es pequeño.\n5. Reejecutar los 5 casos de calibración en casos/calibracion_z90_llm/ con RESUMEN.md, y agregar tests que fallen si llm=False o llamadas_llm=0.\n\nResponder con Issue \"[BUS] hecho - Grok\" con commits y rutas como evidencia.",
+  "transporte": "github-issues"
+}
