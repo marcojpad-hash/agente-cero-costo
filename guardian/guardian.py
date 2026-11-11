@@ -362,6 +362,45 @@ def guardar_estado(repo_root, estado):
                  encoding="utf-8")
 
 
+# ---------------------------------------------------------------- ledger HECHOS (watchdog)
+# Una sola lectura responde "¿ya se hizo X?". Solo se registra un HECHO con
+# evidencia verificada (commit/PR/archivo/exit code). Un acuse NO es una entrada.
+HECHOS_PATH = Path(__file__).resolve().parent / "HECHOS.json"
+
+
+def cargar_hechos():
+    try:
+        d = json.loads(HECHOS_PATH.read_text(encoding="utf-8"))
+        return d if isinstance(d, dict) else {"hechos": [], "pendientes": []}
+    except (OSError, ValueError):
+        return {"hechos": [], "pendientes": []}
+
+
+def registrar_hecho(id_hecho, que, evidencia, url=""):
+    """Registra un HECHO verificado en el ledger. No duplica por id.
+    Devuelve True si lo agregó, False si ya existía."""
+    d = cargar_hechos()
+    if any(h.get("id") == id_hecho for h in d.get("hechos", [])):
+        return False
+    d.setdefault("hechos", []).append({
+        "id": id_hecho, "que": que, "evidencia": evidencia,
+        "url": url, "fecha": ahora_utc().strftime("%Y-%m-%d"),
+        "estado": "HECHO",
+    })
+    # Si estaba en pendientes, quitarlo de ahí.
+    d["pendientes"] = [p for p in d.get("pendientes", [])
+                       if p.get("id") != id_hecho]
+    d["actualizado"] = ahora_utc().strftime("%Y-%m-%d")
+    HECHOS_PATH.write_text(json.dumps(d, ensure_ascii=False, indent=2),
+                           encoding="utf-8")
+    return True
+
+
+def hecho_existe(id_hecho):
+    d = cargar_hechos()
+    return any(h.get("id") == id_hecho for h in d.get("hechos", []))
+
+
 # ---------------------------------------------------------------- chequeo A
 def chequeo_delegaciones(token, estado):
     """Issues [BUS] indicacion abiertos para grok/copilot/codex sin respuesta.
@@ -1066,6 +1105,7 @@ def main():
     salida.mkdir(parents=True, exist_ok=True)
 
     estado = cargar_estado(repo_root)
+    hechos = cargar_hechos()
     ahora = ahora_utc()
     marca = ahora.astimezone(dt.timezone(dt.timedelta(hours=-6)))
     fecha = marca.strftime("%Y-%m-%d %H:%M")

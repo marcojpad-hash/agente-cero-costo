@@ -1,0 +1,114 @@
+{
+  "actualizado": "2026-11-11",
+  "descripcion": "Ledger de hechos verificados: qué se hizo, con qué evidencia, cuándo. Una sola lectura responde '¿ya se hizo?'. Se agrega una entrada SOLO cuando la evidencia está verificada (commit/PR/archivo en GitHub, exit code). Un acuse NO es una entrada: la implementación es la que se registra.",
+  "hechos": [
+    {
+      "estado": "HECHO",
+      "evidencia": "PR #5 orquestador-central, commit 155ff27, rama fix/runner-confinamiento-frescura, state open, merged false",
+      "fecha": "2026-11-10",
+      "id": "runner-pr5",
+      "que": "Parche del runner (validación de argumentos de ruta + frescura de salidas)",
+      "url": "https://github.com/marcojpad-hash/orquestador-central/pull/5"
+    },
+    {
+      "estado": "HECHO",
+      "evidencia": "PR #6 orquestador-central, commit ce3dc97, 3 archivos +51 -0, mergeable true, state open",
+      "fecha": "2026-11-10",
+      "id": "c1-c3-c6-pr6",
+      "que": "Contradicciones C1/C3/C6: excepción workflows a main, registro Muse/Pecas, reglas duras 1 pág",
+      "url": "https://github.com/marcojpad-hash/orquestador-central/pull/6"
+    },
+    {
+      "estado": "HECHO",
+      "evidencia": "Commit 6599f35 en rama feature/capcot-video-discovery-continuity, +8 -0; validador re-ejecutado sobre el archivo en GitHub: OK exit 0; narrative_qa PASS 91 intacto",
+      "fecha": "2026-11-10",
+      "id": "c4-storyboard",
+      "que": "Storyboard adn-sincroniza-flujo corregido (asset_filename en 8 escenas), validador OK",
+      "url": "https://github.com/marcojpad-hash/capcot-capsulas-imaginantes/commit/6599f35cb274cf8eb7c312b06d325e738cddd18b"
+    },
+    {
+      "estado": "HECHO",
+      "evidencia": "Commit 0462dcf CAPCOT main; gitleaks.yml y semgrep.yml HTTP 200 en main; secret scanning ON, push protection ON, Dependabot alerts ON, CodeQL ON",
+      "fecha": "2026-11-10",
+      "id": "c5-seguridad",
+      "que": "Workflows gitleaks + semgrep subidos a CAPCOT main; seguridad nativa activada",
+      "url": "https://github.com/marcojpad-hash/capcot-capsulas-imaginantes"
+    },
+    {
+      "estado": "HECHO",
+      "evidencia": "Commit 81b7404 ChatGPT-migracion; archivo en bandeja/resueltos/, ya no en bandeja/",
+      "fecha": "2026-11-10",
+      "id": "c2-handoff-10nov",
+      "que": "Handoff 2026-11-10 SEGUNDA_SESION_RECUPERACION cerrado y movido a resueltos/",
+      "url": "https://github.com/marcojpad-hash/ChatGPT-migracion"
+    },
+    {
+      "estado": "HECHO",
+      "evidencia": "Commit db961ec ChatGPT-migracion; archivo en bandeja/ HTTP 200, ya no en resueltos/ HTTP 404",
+      "fecha": "2026-11-10",
+      "id": "c2-correccion",
+      "que": "Cierre prematuro del aviso 2026-10-26_claude_entra_al_repo corregido: devuelto a bandeja/ como PENDIENTE",
+      "url": "https://github.com/marcojpad-hash/ChatGPT-migracion"
+    },
+    {
+      "estado": "HECHO",
+      "evidencia": "Verificado por API 2026-11-10: 10 repos, todos public",
+      "fecha": "2026-11-10",
+      "id": "repos-publicos",
+      "que": "10 repos de marcojpad-hash en público (incl. motor-u6-storage, orquestador-central, ChatGPT-migracion, memoria-compartida)",
+      "url": "https://github.com/marcojpad-hash"
+    },
+    {
+      "estado": "HECHO",
+      "evidencia": "Commit CAPCOT b0a56b0a; YouTube HSgrnejAcaI privado, publishAt 2026-11-11T19:30:00Z",
+      "fecha": "2026-11-10",
+      "id": "mpemba-oficial",
+      "que": "Mpemba oficial montada y programada 2026-11-11 13:30 CST",
+      "url": "https://www.youtube.com/watch?v=HSgrnejAcaI"
+    }
+  ],
+  "pendientes": [
+    {
+      "estado": "PENDIENTE",
+      "id": "c2-reparto",
+      "motivo": "Sin evidencia de cierre",
+      "que": "Bandeja: aviso 2026-10-26 reparto_armado_ahorro_tokens"
+    },
+    {
+      "estado": "PENDIENTE",
+      "id": "c2-recuperacion-03nov",
+      "motivo": "Sin evidencia de cierre",
+      "que": "Bandeja: handoff 2026-11-03 RECUPERACION_MIGRACION"
+    },
+    {
+      "estado": "PENDIENTE",
+      "id": "c2-claude-entra",
+      "motivo": "Acuse registrado, implementación (nota firmada) no hecha",
+      "que": "Bandeja: aviso 2026-10-26 claude_entra_al_repo (nota firmada en el repo)"
+    },
+    {
+      "estado": "PENDIENTE",
+      "id": "pr5-merge",
+      "motivo": "Decisión de Marco (Regla 8)",
+      "que": "Merge del PR #5 (runner)"
+    },
+    {
+      "estado": "PENDIENTE",
+      "id": "pr6-merge",
+      "motivo": "Decisión de Marco (Regla 8)",
+      "que": "Merge del PR #6 (C1/C3/C6)"
+    },
+    {
+      "estado": "PENDIENTE",
+      "id": "clayzo-cuenta",
+      "motivo": "Decisión de Marco",
+      "que": "Crear cuenta gratuita de Clayzo"
+    },
+    {
+      "estado": "PENDIENTE",
+      "id": "semgrep-21",
+      "motivo": "Revisión/corrección pendiente",
+      "que": "21 hallazgos bloqueantes de semgrep en CAPCOT"
+    }
+  ]
+}
