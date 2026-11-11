@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-47",
+  "issue": 47,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/47",
+  "fecha": "2026-11-11T07:34:47Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje:\nRepo: marcojpad-hash/motor-u6-storage. No tocar Engine V5 ni catálogo 244. PR sin merge (Mj fusiona).\n\n1) Corridas viejas = SOLO CONSULTA (historial de qué no hacer / qué se pasó). No borrar ni reescribir sus valores ni hashes.\n   - Agregar a cada registro previo al 2026-11-11 en casos/resultados/resultados.jsonl (y a los informes/recibos de corridas viejas) un campo/encabezado:\n     \"estado_historico\": \"SOLO_CONSULTA\", \"motivo\": \"escalas mezcladas (rank_fusion/suma fuera de 0.01–0.999; pesos CAMEO previos sin regla canónica)\", \"no_usar_para\": [\"calibracion\",\"comparacion_directa_de_puntaje\"].\n   - Hacerlo como sidecar (casos/resultados/ESTADO_HISTORICO.json indexado por corrida/case_id + output_sha256) si tocar el jsonl rompe hashes; preferir sidecar.\n   - Ningún consumidor (fábrica, CEB, calibración, A/B) debe usar registros SOLO_CONSULTA como base de verdad; si lo hace, FALLO con motivo.\n2) Rama alterno/cameo-pesos: cablear peso_efectivo a cameo_activity como PROMEDIO en 0.01–0.999, nunca la suma (hoy selected_peso_efectivo_sum=42.56). Guardia de escala: cualquier valor de componente/ranking fuera de 0.01–0.999 = FALLO_ESCALA con paso y componente que lo empuja (incluye rank_fusion 28.75 preexistente: reportar, no maquillar).\n3) Evidencia: correr Churchill (CAL_LOTE01_02_CHURCHILL) y Napoleón en la rama; tabla vs corrida vieja (Churchill 2026-10-24: H1 berlin_01_erizo 0.310, H2 30_ambicion 0.266, margen 0.0447). Recibo + tests en el PR. Sin evidencia enlazada no es hecho.",
+  "transporte": "github-issues"
+}
