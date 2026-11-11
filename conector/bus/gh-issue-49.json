@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-49",
+  "issue": 49,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/49",
+  "fecha": "2026-11-11T08:18:41Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje:\nRepo marcojpad-hash/motor-u6-storage, rama vigente alterno/cameo-pesos (ver CONTRATO_OPERATIVO_RAMA_VIGENTE.md). No tocar Engine V5 ni 244. PR sin merge.\n\nMj 2026-11-11: NO existe regla de \"3 cortes\" (la puso Puta 3 en casos/fabrica/README.md el 2026-10-24 por velocidad; es un error). Tampoco se fija otro número: un número fijo hace que el modelo se quede en ese número.\n\n1) Quitar \"3 cortes\" de casos/fabrica/README.md, semillas y cualquier prompt/arnés/contrato que lo fije. No poner número mínimo ni máximo.\n2) Regla de cortes por CRITERIO, no por cuenta: se agrega un corte cada vez que en la biografía (solo hechos ≤ Z) hay un cambio de rol, crisis, decisión irreversible o cambio de dirección del vector (signo de velocidad/aceleración de tokens). Se deja de agregar cuando el siguiente corte candidato no cambia el vector (saturación: delta de trayectoria < umbral registrado). El desenlace/muerte y todo lo post-Z nunca es corte.\n3) Guardia: FALLO_CORTES si (a) los cortes no permiten calcular velocidad y aceleración, (b) hay hueco temporal con cambio de rol documentado sin corte, (c) la cuenta coincide exactamente con un número dado en el prompt sin justificación de saturación, (d) algún corte es el desenlace. Registrar por corte el motivo (rol/crisis/irreversible/cambio de vector).\n4) Evidencia: rehacer Churchill (biografía pública, misma Z) con la regla y comparar contra la corrida de 3 cortes (casos/corridas_alterno/CHURCHILL_CAMEO_ALTERNO): número de cortes que salió y por qué, H1/H2, margen, trayectoria/velocidad/inercia. Recibo + tests en el PR; sin evidencia enlazada no es hecho.",
+  "transporte": "github-issues"
+}
