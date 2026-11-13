@@ -191,6 +191,20 @@ class RunnerTests(unittest.TestCase):
             finally:
                 os.environ.pop("GUARDIA_ESTRICTA", None)
 
+    def test_guard_checkout_is_not_treated_as_caller_dependency_or_test_suite(self):
+        from guardia.core import _requirements, _tests_present, _package_policy
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "_guardia" / "tests").mkdir(parents=True)
+            (root / "_guardia" / "requirements-mcp.txt").write_text("mcp>=1.0\n", encoding="utf-8")
+            (root / "requirements.txt").write_text("numpy>=1.0\n", encoding="utf-8")
+            config = {"security": {"allowed_packages": ["numpy"]}}
+            self.assertEqual([p.name for p in _requirements(root)], ["requirements.txt"])
+            self.assertFalse(_tests_present(root))
+            okay, rejected, _ = _package_policy(root, config)
+            self.assertTrue(okay)
+            self.assertEqual(rejected, [])
+
     def test_placeholder_scanner_rejects_marker_in_temporary_source(self):
         from guardia.core import _run_builtin
         with tempfile.TemporaryDirectory() as temp:
