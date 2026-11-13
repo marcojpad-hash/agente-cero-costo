@@ -1,7 +1,10 @@
-name: supervisor-reutilizable
+name: Supervisor reutilizable
 
 on:
   workflow_call:
+    secrets:
+      BUS_GITHUB_TOKEN:
+        required: false
 
 permissions:
   contents: read
@@ -9,58 +12,137 @@ permissions:
   pull-requests: read
 
 jobs:
-  supervisar:
+  supervisor:
+    name: supervisor
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - name: Instalar requirements si existen
-        run: |
-          if ls requirements*.txt 1> /dev/null 2>&1; then
-            pip install -r requirements.txt || true
-          fi
+      - name: Checkout reusable guard package
+        uses: actions/checkout@v4
+        with:
+          repository: marcojpad-hash/agente-cero-costo
+          ref: supervisor-reutilizable-grok
+          path: _guardia
+          persist-credentials: false
 
-      - name: Chequeo de sintaxis y placeholders
+      - name: Install declared optional dependencies
+        shell: bash
         run: |
-          git diff --name-only HEAD~1 HEAD | grep '\.py$' | while read f; do
-            python -m compileall -q "$f" || exit 1
-            if grep -q PLACEHOLDER "$f" || [ $(wc -c < "$f") -lt 50 ]; then
-              echo "Fallo: placeholder o archivo vacío en $f"
-              exit 1
-            fi
+          set -euo pipefail
+          mapfile -d '' -t requirements < <(
+            find . -type f -name 'requirements*.txt' \
+              -not -path './.git/*' \
+              -not -path './_guardia/*' \
+              -print0 | sort -z
+          )
+          for requirement in "${requirements[@]}"; do
+            echo "Installing optional manifest: $requirement"
+            python -m pip install -r "$requirement" || echo "::warning::Optional dependency install failed: $requirement"
           done
 
-      - name: Pruebas
+      - name: Run generic execution guard
+        env:
+          PYTHONPATH: ${{ github.workspace }}/_guardia
+          GUARDIA_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          GUARDIA_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GUARDIA_EVIDENCE_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
         run: |
-          if [ -d tests ]; then
-            if command -v pytest >/dev/null; then
-              pytest -q || exit 1
-            else
-              python -m unittest discover -s tests || exit 1
-            fi
-          fi
+          set -o pipefail
+          python -m guardia.cli \
+            --config guardia.config.json \
+            --ledger .guardia/ledger.jsonl \
+            --report .guardia/report.json \
+            2>&1 | tee "$RUNNER_TEMP/supervisor.log"
 
-      - name: Smokes
-        run: |
-          find . -name 'smoke*' -o -name '*smoke*.py' | head -5 | while read s; do
-            if [ -f "$s" ]; then
-              bash "$s" || python "$s" || exit 1
-            fi
-          done
-          if [ -f supervisor.smoke ]; then
-            bash supervisor.smoke || exit 1
-          fi
-
-      - name: Crear issue si falla
+      - name: Create or comment failure order
         if: failure()
-        run: |
-          echo "Fallo detectado. Crear issue en agente-cero-costo."
-          # Aquí iría la lógica para crear issue con gh o API, usando GITHUB_TOKEN
-          # Por ahora placeholder seguro sin claves
+        uses: actions/github-script@v7
+        env:
+          BUS_GITHUB_TOKEN: ${{ secrets.BUS_GITHUB_TOKEN }}
+          SUPERVISOR_LOG: ${{ runner.temp }}/supervisor.log
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require("fs");
+            const { getOctokit } = require("@actions/github");
+            const caller = { owner: context.repo.owner, repo: context.repo.repo };
+            const shortSha = context.sha.slice(0, 7);
+            const logPath = process.env.SUPERVISOR_LOG;
+            const logText = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "Supervisor log was not created.";
+            const logTail = logText.split(/\r?\n/).slice(-60).join("\n");
+            let report = {};
+            try {
+              report = JSON.parse(fs.readFileSync(".guardia/report.json", "utf8"));
+            } catch (_) {}
+            const changed = Array.isArray(report.changed_files) ? report.changed_files.join(", ") : "not identified";
+            const failed = Object.entries(report.estados || {}).find((entry) => entry[1].estado === "FALLO_EJECUCION");
+            const component = failed ? failed[0] : "supervisor";
+            const title = "[BUS] indicacion - Supervisor: " + caller.owner + "/" + caller.repo + " falla en " + shortSha;
+            const body = [
+              "para: chatgpt",
+              "tipo: orden",
+              "mensaje:",
+              "repo: " + caller.owner + "/" + caller.repo,
+              "commit: " + context.sha,
+              "componente: " + component,
+              "archivos: " + changed,
+              "",
+              "Últimas 60 líneas del registro:",
+              logTail,
+              "",
+              "Instrucción: corregir en una rama nueva, abrir PR sin merge, adjuntar salida de pruebas y emitir el acuse [BUS] hecho - ChatGPT."
+            ].join("\n");
+
+            let client = github;
+            let target = caller;
+            if (process.env.BUS_GITHUB_TOKEN) {
+              const central = getOctokit(process.env.BUS_GITHUB_TOKEN);
+              try {
+                await central.rest.repos.get({ owner: "marcojpad-hash", repo: "agente-cero-costo" });
+                client = central;
+                target = { owner: "marcojpad-hash", repo: "agente-cero-costo" };
+              } catch (error) {
+                core.warning("Central bus token unavailable; creating the order in the caller repository.");
+              }
+            }
+
+            const openIssues = await client.paginate(client.rest.issues.listForRepo, {
+              ...target,
+              state: "open",
+              per_page: 100
+            });
+            const existing = openIssues.find((item) => !item.pull_request && item.title === title);
+            if (existing) {
+              await client.rest.issues.createComment({
+                ...target,
+                issue_number: existing.number,
+                body
+              });
+              core.info("Updated existing open supervisor order #" + existing.number);
+            } else {
+              const created = await client.rest.issues.create({ ...target, title, body });
+              core.info("Created supervisor order #" + created.data.number);
+            }
+
+      - name: Upload supervisor evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supervisor-evidence-${{ github.run_id }}
+          path: .guardia/
+          if-no-files-found: warn
