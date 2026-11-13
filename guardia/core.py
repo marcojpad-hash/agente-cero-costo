@@ -95,7 +95,11 @@ def _smoke_files(root: Path) -> list[Path]:
     return sorted(
         p for p in root.rglob("*")
         if p.is_file() and ".git" not in p.parts and ".guardia" not in p.parts
-        and ((p.name.startswith("smoke") and p.suffix == ".sh") or p.name.endswith("smoke.py"))
+        and (
+            p.name == "supervisor.smoke"
+            or (p.name.startswith("smoke") and p.suffix in {".sh", ".py"})
+            or ("smoke" in p.stem.lower() and p.suffix == ".py")
+        )
     )
 
 
@@ -250,7 +254,7 @@ def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, An
         stdout: list[str] = []
         stderr: list[str] = []
         for path in files:
-            command = ["bash", str(path.relative_to(root))] if path.suffix == ".sh" else [sys.executable, str(path.relative_to(root))]
+            command = [sys.executable, str(path.relative_to(root))] if path.suffix == ".py" else ["bash", str(path.relative_to(root))]
             result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
             stdout.append(f"$ {' '.join(command)}\n{result.stdout}")
             stderr.append(result.stderr)
