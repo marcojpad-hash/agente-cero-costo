@@ -79,8 +79,21 @@ jobs:
           github-token: ${{ github.token }}
           script: |
             const fs = require("fs");
-            const { getOctokit } = require("@actions/github");
             const caller = { owner: context.repo.owner, repo: context.repo.repo };
+            async function requestWithToken(token, method, path, body) {
+              const response = await fetch("https://api.github.com" + path, {
+                method,
+                headers: {
+                  "Authorization": "Bearer " + token,
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json"
+                },
+                body: body === undefined ? undefined : JSON.stringify(body)
+              });
+              if (!response.ok) throw new Error("GitHub API " + response.status + ": " + await response.text());
+              return response.status === 204 ? null : response.json();
+            }
             const shortSha = context.sha.slice(0, 7);
             const logPath = process.env.SUPERVISOR_LOG;
             const logText = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "Supervisor log was not created.";
@@ -108,34 +121,41 @@ jobs:
               "Instrucción: corregir en una rama nueva, abrir PR sin merge, adjuntar salida de pruebas y emitir el acuse [BUS] hecho - ChatGPT."
             ].join("\n");
 
-            let client = github;
-            let target = caller;
             if (process.env.BUS_GITHUB_TOKEN) {
-              const central = getOctokit(process.env.BUS_GITHUB_TOKEN);
               try {
-                await central.rest.repos.get({ owner: "marcojpad-hash", repo: "agente-cero-costo" });
-                client = central;
-                target = { owner: "marcojpad-hash", repo: "agente-cero-costo" };
+                const owner = "marcojpad-hash";
+                const repository = "agente-cero-costo";
+                const path = "/repos/" + owner + "/" + repository;
+                const openIssues = await requestWithToken(process.env.BUS_GITHUB_TOKEN, "GET", path + "/issues?state=open&per_page=100");
+                const existing = openIssues.find((item) => !item.pull_request && item.title === title);
+                if (existing) {
+                  await requestWithToken(process.env.BUS_GITHUB_TOKEN, "POST", path + "/issues/" + existing.number + "/comments", { body });
+                  core.info("Updated central supervisor order #" + existing.number);
+                } else {
+                  const created = await requestWithToken(process.env.BUS_GITHUB_TOKEN, "POST", path + "/issues", { title, body });
+                  core.info("Created central supervisor order #" + created.number);
+                }
+                return;
               } catch (error) {
-                core.warning("Central bus token unavailable; creating the order in the caller repository.");
+                core.warning("Central bus token unavailable; creating the order in the caller repository: " + String(error));
               }
             }
 
-            const openIssues = await client.paginate(client.rest.issues.listForRepo, {
-              ...target,
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              ...caller,
               state: "open",
               per_page: 100
             });
             const existing = openIssues.find((item) => !item.pull_request && item.title === title);
             if (existing) {
-              await client.rest.issues.createComment({
-                ...target,
+              await github.rest.issues.createComment({
+                ...caller,
                 issue_number: existing.number,
                 body
               });
               core.info("Updated existing open supervisor order #" + existing.number);
             } else {
-              const created = await client.rest.issues.create({ ...target, title, body });
+              const created = await github.rest.issues.create({ ...caller, title, body });
               core.info("Created supervisor order #" + created.data.number);
             }
 
@@ -146,3 +166,4 @@ jobs:
           name: supervisor-evidence-${{ github.run_id }}
           path: .guardia/
           if-no-files-found: warn
+          include-hidden-files: true
