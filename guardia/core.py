@@ -197,8 +197,10 @@ def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, An
             if not path.is_file():
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
-            if "PLACEHOLDER" in text or "TODO_PLACEHOLDER" in text:
-                findings.append(f"PLACEHOLDER:{item}")
+            marker = "PLACE" + "HOLDER"
+            todo_marker = "TODO_" + marker
+            if marker in text or todo_marker in text:
+                findings.append(f"{marker}:{item}")
         return (1, "", "\n".join(findings)) if findings else (0, f"Scanned {len(files)} changed Python files.\n", "")
     if name == "size_delta":
         base = os.getenv("GUARDIA_BASE_SHA", "").strip()
