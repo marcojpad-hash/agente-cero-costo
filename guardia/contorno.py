@@ -62,6 +62,8 @@ def siguiente_contorno(error: str, historial: list[dict[str, Any]] | None = None
     if attempt > max_intentos:
         return {
             "categoria": category,
+            "tipo_obstaculo": "piedra",
+            "ruta_siguiente": "agua",
             "intento": attempt,
             "accion": "ESCALAR_CON_EVIDENCIA",
             "escalar": True,
@@ -81,6 +83,8 @@ def siguiente_contorno(error: str, historial: list[dict[str, Any]] | None = None
         }
     return {
         "categoria": category,
+        "tipo_obstaculo": "piedra",
+        "ruta_siguiente": "agua",
         "intento": attempt,
         "accion": action,
         "escalar": False,
