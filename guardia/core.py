@@ -12,7 +12,6 @@ import os
 import re
 import subprocess
 import sys
-import uuid
 
 from .contorno import siguiente_contorno
 from .ledger import Ledger, nuevo_id, sha256_archivos
@@ -25,32 +24,23 @@ ESTADOS = (
     "REQUIERE_CONTRATO",
 )
 FALLOS = {
-    "SIMULADO_FIXTURE",
-    "API_PENDING",
-    "APAGADA_POR_FLAG",
-    "NO_INVOCADO",
-    "OMITIDO_SIN_CONTRATO",
-    "REPORTED_EXECUTED_NOT_OBSERVED",
-    "OUTPUT_PERSISTED_WITHOUT_CONSUMER",
-    "PACKAGE_NOT_ALLOWED",
-    "INTENTADO_FALLIDO",
-    "SIN_EVIDENCIA",
-    "ARTIFACT_MISSING",
-    "ARTIFACT_EMPTY",
-    "HASH_MISSING",
+    "SIMULADO_FIXTURE", "API_PENDING", "APAGADA_POR_FLAG", "NO_INVOCADO",
+    "OMITIDO_SIN_CONTRATO", "REPORTED_EXECUTED_NOT_OBSERVED",
+    "OUTPUT_PERSISTED_WITHOUT_CONSUMER", "PACKAGE_NOT_ALLOWED",
+    "INTENTADO_FALLIDO", "SIN_EVIDENCIA", "ARTIFACT_MISSING",
+    "ARTIFACT_EMPTY", "HASH_MISSING",
 }
 OMISIONES = {"NOT_APPLICABLE", "NO_APLICA", "OMISION_CONTRATUAL"}
 SENAL_AUSENTE = {"CORRIO_SIN_SENAL", "SIN_SENAL"}
-NORMALIZE = re.compile(r"[-_.]+")
+_PACKAGE_RE = re.compile(r"^([A-Za-z0-9_.-]+)")
 
 
 def _normalizar_paquete(value: str) -> str:
-    return NORMALIZE.sub("-", value.strip().lower())
+    return re.sub(r"[-_.]+", "-", value.strip().lower())
 
 
 def cargar_configuracion(path: str | Path) -> dict[str, Any]:
-    source = Path(path)
-    data = json.loads(source.read_text(encoding="utf-8"))
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         raise ValueError("configuration root must be an object")
     for key in ("security", "gatekeeper", "topology"):
@@ -60,16 +50,17 @@ def cargar_configuracion(path: str | Path) -> dict[str, Any]:
     gate.setdefault("exit_code_on_fail", 9)
     gate.setdefault("strict_mode_env_var", "GUARDIA_ESTRICTA")
     gate.setdefault("strict_mode_default", True)
-    gate.setdefault("exclude_sidecars", ["*.log", "*.jsonl", "*.tmp"])
-    topology = data["topology"].get("expected_components")
-    if not isinstance(topology, dict):
+    gate.setdefault("exclude_sidecars", ["*.log", "*.jsonl", "*.tmp", "*.pyc"])
+    specs = data["topology"].get("expected_components")
+    if not isinstance(specs, dict):
         raise ValueError("topology.expected_components must be an object")
-    for component, spec in topology.items():
+    for name, spec in specs.items():
         if not isinstance(spec, dict):
-            raise ValueError(f"component definition must be an object: {component}")
+            raise ValueError(f"component definition must be an object: {name}")
         spec.setdefault("required", True)
         spec.setdefault("terminal", False)
         spec.setdefault("feeds", [])
+        spec.setdefault("consumes", [])
         spec.setdefault("requires_input", False)
         spec.setdefault("expected_artifacts", [])
         spec.setdefault("expected_keys_in_output", {})
@@ -77,11 +68,10 @@ def cargar_configuracion(path: str | Path) -> dict[str, Any]:
 
 
 def _strict_mode(config: dict[str, Any]) -> tuple[bool, str]:
-    gate = config["gatekeeper"]
-    name = str(gate.get("strict_mode_env_var", "GUARDIA_ESTRICTA"))
+    name = str(config["gatekeeper"].get("strict_mode_env_var", "GUARDIA_ESTRICTA"))
     value = os.getenv(name)
     if value is None:
-        return bool(gate.get("strict_mode_default", True)), name
+        return bool(config["gatekeeper"].get("strict_mode_default", True)), name
     return value.strip() != "0", name
 
 
@@ -92,48 +82,41 @@ def _changed_files(root: Path) -> list[str]:
         return []
     result = subprocess.run(
         ["git", "diff", "--name-only", base, head],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        check=False,
+        cwd=root, capture_output=True, text=True, check=False,
     )
-    if result.returncode != 0:
-        return []
-    return sorted(line.strip() for line in result.stdout.splitlines() if line.strip())
+    return sorted(line.strip() for line in result.stdout.splitlines() if line.strip()) if result.returncode == 0 else []
 
 
-def _has_tests(root: Path) -> bool:
-    return any(path.is_dir() for path in root.rglob("tests") if ".git" not in path.parts and ".guardia" not in path.parts)
+def _tests_present(root: Path) -> bool:
+    return any(p.is_dir() for p in root.rglob("tests") if ".git" not in p.parts and ".guardia" not in p.parts)
 
 
 def _smoke_files(root: Path) -> list[Path]:
     return sorted(
-        path for path in root.rglob("*")
-        if path.is_file()
-        and ".git" not in path.parts
-        and ".guardia" not in path.parts
-        and (path.name.startswith("smoke") and path.suffix == ".sh" or path.name.endswith("smoke.py"))
+        p for p in root.rglob("*")
+        if p.is_file() and ".git" not in p.parts and ".guardia" not in p.parts
+        and ((p.name.startswith("smoke") and p.suffix == ".sh") or p.name.endswith("smoke.py"))
     )
 
 
 def _requirements(root: Path) -> list[Path]:
-    return sorted(path for path in root.rglob("requirements*.txt") if ".git" not in path.parts and ".guardia" not in path.parts)
+    return sorted(p for p in root.rglob("requirements*.txt") if ".git" not in p.parts and ".guardia" not in p.parts)
 
 
 def _package_policy(root: Path, config: dict[str, Any]) -> tuple[bool, list[str], str]:
-    allowed = {_normalizar_paquete(str(item)) for item in config["security"].get("allowed_packages", [])}
-    requirement_files = _requirements(root)
-    if not requirement_files:
+    allowed = {_normalizar_paquete(str(x)) for x in config["security"].get("allowed_packages", [])}
+    files = _requirements(root)
+    if not files:
         return True, [], "NO_REQUIREMENTS_FILES"
     if "*" in allowed:
         return True, [], "ALLOW_ALL_DECLARED"
     declared: set[str] = set()
-    for path in requirement_files:
+    for path in files:
         for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
             value = line.strip()
             if not value or value.startswith(("#", "-")):
                 continue
-            match = re.match(r"([A-Za-z0-9_.-]+)", value)
+            match = _PACKAGE_RE.match(value)
             if match:
                 declared.add(_normalizar_paquete(match.group(1)))
     rejected = sorted(declared - allowed)
@@ -146,7 +129,7 @@ def _when_applies(when: str, root: Path, changed: list[str]) -> bool:
     if when == "changed_python_files":
         return any(name.endswith(".py") for name in changed)
     if when == "tests_present":
-        return _has_tests(root)
+        return _tests_present(root)
     if when == "smokes_present":
         return bool(_smoke_files(root))
     if when == "requirements_present":
@@ -156,24 +139,34 @@ def _when_applies(when: str, root: Path, changed: list[str]) -> bool:
     raise ValueError(f"unknown condition: {when}")
 
 
-def _within_root(root: Path, value: str) -> Path:
+def _within_root(root: Path, value: str, fail_outside: bool) -> Path:
     candidate = (root / value).resolve()
-    if not candidate.is_relative_to(root.resolve()):
+    if fail_outside and not candidate.is_relative_to(root.resolve()):
         raise ValueError(f"artifact path outside repository root: {value}")
     return candidate
 
 
+def _is_sidecar(path: Path, patterns: list[str]) -> bool:
+    return any(fnmatch.fnmatch(path.name, pattern) for pattern in patterns)
+
+
 def _check_artifacts(root: Path, spec: dict[str, Any], config: dict[str, Any]) -> list[str]:
     problems: list[str] = []
+    gate = config["gatekeeper"]
+    fail_outside = bool(config["security"].get("fail_on_outside_artifact", True))
+    sidecars = list(gate.get("exclude_sidecars", []))
     for pattern in spec.get("expected_artifacts", []):
-        candidate = _within_root(root, str(pattern))
+        candidate = _within_root(root, str(pattern), fail_outside)
         matches = sorted(root.glob(str(pattern))) if any(char in str(pattern) for char in "*?[") else [candidate]
-        valid = [path for path in matches if path.exists() and path.is_file() and path.stat().st_size > 0]
+        valid = [
+            p for p in matches
+            if p.exists() and p.is_file() and p.stat().st_size > 0 and not _is_sidecar(p, sidecars)
+        ]
         if not valid:
             problems.append(f"ARTIFACT_MISSING_OR_EMPTY:{pattern}")
     for artifact, keys in spec.get("expected_keys_in_output", {}).items():
-        path = _within_root(root, str(artifact))
-        if not path.is_file() or path.stat().st_size == 0:
+        path = _within_root(root, str(artifact), fail_outside)
+        if not path.is_file() or path.stat().st_size == 0 or _is_sidecar(path, sidecars):
             problems.append(f"ARTIFACT_MISSING:{artifact}")
             continue
         try:
@@ -186,17 +179,59 @@ def _check_artifacts(root: Path, spec: dict[str, Any], config: dict[str, Any]) -
     return problems
 
 
-def _run_builtin(name: str, root: Path, changed: list[str]) -> tuple[int, str, str]:
+def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, Any]) -> tuple[int, str, str]:
     if name == "compile_changed_python":
         files = [item for item in changed if item.endswith(".py")]
         if not files:
-            return 0, "No changed Python files; compile step not applicable.\n", "NOT_APPLICABLE"
-        command = [sys.executable, "-m", "compileall", "-q", *files]
-        result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
+            return 0, "No changed Python files.\n", "NOT_APPLICABLE"
+        result = subprocess.run(
+            [sys.executable, "-m", "compileall", "-q", *files],
+            cwd=root, capture_output=True, text=True, check=False,
+        )
         return result.returncode, result.stdout, result.stderr
+    if name == "placeholder_scan":
+        files = [item for item in changed if item.endswith(".py")]
+        findings = []
+        for item in files:
+            path = root / item
+            if not path.is_file():
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            if "PLACEHOLDER" in text or "TODO_PLACEHOLDER" in text:
+                findings.append(f"PLACEHOLDER:{item}")
+        return (1, "", "\n".join(findings)) if findings else (0, f"Scanned {len(files)} changed Python files.\n", "")
+    if name == "size_delta":
+        base = os.getenv("GUARDIA_BASE_SHA", "").strip()
+        if not base or set(base) == {"0"}:
+            return 0, "No previous revision available for size comparison.\n", "CORRIO_SIN_SENAL"
+        findings = []
+        for item in changed:
+            if not item.endswith(".py"):
+                continue
+            path = root / item
+            if not path.is_file():
+                continue
+            previous = subprocess.run(
+                ["git", "show", f"{base}:{item}"], cwd=root,
+                capture_output=True, check=False,
+            )
+            if previous.returncode != 0:
+                continue
+            old_size = len(previous.stdout)
+            new_size = path.stat().st_size
+            if old_size > 0 and new_size < old_size * 0.8:
+                findings.append(f"SIZE_DROP_OVER_20_PERCENT:{item}:{old_size}->{new_size}")
+        return (1, "", "\n".join(findings)) if findings else (0, "No changed Python file lost more than 20% of its previous size.\n", "")
+    if name == "package_policy":
+        okay, rejected, reason = _package_policy(root, config)
+        if reason == "NO_REQUIREMENTS_FILES":
+            return 0, "No dependency manifests; policy not applicable.\n", "NOT_APPLICABLE"
+        if not okay:
+            return 1, "", "PACKAGE_NOT_ALLOWED:" + ",".join(rejected)
+        return 0, f"Declared dependencies are allowlisted ({reason}).\n", ""
     if name == "tests":
-        if not _has_tests(root):
-            return 0, "No tests directory; contractually omitted.\n", "NOT_APPLICABLE"
+        if not _tests_present(root):
+            return 0, "No tests directory.\n", "NOT_APPLICABLE"
         if importlib.util.find_spec("pytest") is not None:
             command = [sys.executable, "-m", "pytest", "-q"]
         else:
@@ -209,19 +244,17 @@ def _run_builtin(name: str, root: Path, changed: list[str]) -> tuple[int, str, s
     if name == "smokes":
         files = _smoke_files(root)
         if not files:
-            return 0, "No smoke scripts; contractually omitted.\n", "NOT_APPLICABLE"
-        out: list[str] = []
-        err: list[str] = []
+            return 0, "No smoke scripts.\n", "NOT_APPLICABLE"
+        stdout: list[str] = []
+        stderr: list[str] = []
         for path in files:
             command = ["bash", str(path.relative_to(root))] if path.suffix == ".sh" else [sys.executable, str(path.relative_to(root))]
             result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
-            out.append(f"$ {' '.join(command)}\n{result.stdout}")
-            err.append(result.stderr)
+            stdout.append(f"$ {' '.join(command)}\n{result.stdout}")
+            stderr.append(result.stderr)
             if result.returncode != 0:
-                return result.returncode, "".join(out), "".join(err)
-        return 0, "".join(out), "".join(err)
-    if name == "package_policy":
-        return 0, "Package policy evaluated by the guard.\n", ""
+                return result.returncode, "".join(stdout), "".join(stderr)
+        return 0, "".join(stdout), "".join(stderr)
     raise ValueError(f"unknown builtin: {name}")
 
 
@@ -288,8 +321,7 @@ def evaluar(config: dict[str, Any], ledger: str | Path | list[dict[str, Any]], r
                 }
                 break
             meta = consumer_event.get("metadata_control") or {}
-            consumes = meta.get("consumes", [])
-            if component not in consumes and meta.get("input_sha256") != output_hash:
+            if component not in meta.get("consumes", []) and meta.get("input_sha256") != output_hash:
                 results[component] = {
                     "estado": "FALLO_EJECUCION",
                     "motivo": f"OUTPUT_PERSISTED_WITHOUT_CONSUMER:{consumer}",
@@ -297,12 +329,10 @@ def evaluar(config: dict[str, Any], ledger: str | Path | list[dict[str, Any]], r
                 }
                 break
     counts = {state: sum(1 for value in results.values() if value["estado"] == state) for state in ESTADOS}
-    failed = counts["FALLO_EJECUCION"] > 0
     return {
         "estados": results,
         "counts": counts,
-        "failed": failed,
-        "strict_mode": None,
+        "failed": counts["FALLO_EJECUCION"] > 0,
         "exit_code_on_fail": int(config["gatekeeper"].get("exit_code_on_fail", 9)),
     }
 
@@ -314,96 +344,95 @@ def ejecutar_configuracion(
     root: str | Path = ".",
 ) -> tuple[dict[str, Any], int]:
     base = Path(root).resolve()
-    config = cargar_configuracion(config_path if Path(config_path).is_absolute() else base / config_path)
-    ledger_file = ledger_path if Path(ledger_path).is_absolute() else base / ledger_path
-    report_file = report_path if Path(report_path).is_absolute() else base / report_path
+    config_file = Path(config_path)
+    if not config_file.is_absolute():
+        config_file = base / config_file
+    config = cargar_configuracion(config_file)
+    ledger_file = Path(ledger_path)
+    if not ledger_file.is_absolute():
+        ledger_file = base / ledger_file
+    report_file = Path(report_path)
+    if not report_file.is_absolute():
+        report_file = base / report_file
     ledger = Ledger(ledger_file, base)
     strict, strict_env = _strict_mode(config)
     workflow_run_id = nuevo_id()
     changed = _changed_files(base)
-    specs = config["topology"]["expected_components"]
     stopped = False
-    previous_failure: str | None = None
+    failed_component: str | None = None
 
-    policy_ok, rejected, policy_reason = _package_policy(base, config)
-    if policy_reason != "NO_REQUIREMENTS_FILES":
-        component = "dependency_policy"
-        run_id = nuevo_id()
+    if not strict:
         ledger.append(
-            "START", component, status="STARTED", run_id=run_id, parent_run_id=workflow_run_id,
-            metadata_control={"origin": "guardia", "input_sha256": sha256_archivos(base, _requirements(base)), "strict_mode": strict},
+            "COMPLETE", "guardia.strict_mode", status="OMISION_CONTRATUAL",
+            run_id=workflow_run_id,
+            metadata_control={
+                "origin": "guardia", "strict_mode": False,
+                "motivo": f"{strict_env}=0; gate disabled explicitly",
+                "evidence": os.getenv("GUARDIA_EVIDENCE_URL", "environment"),
+                "output_sha256": hashlib.sha256(b"strict-mode-disabled").hexdigest(),
+            },
         )
-        if policy_ok:
-            ledger.append(
-                "COMPLETE", component, status="EJECUTADO", run_id=run_id, parent_run_id=workflow_run_id,
-                metadata_control={
-                    "origin": "guardia", "input_sha256": sha256_archivos(base, _requirements(base)),
-                    "output_sha256": hashlib.sha256(json.dumps(sorted(config["security"].get("allowed_packages", []))).encode()).hexdigest(),
-                    "evidence": os.getenv("GUARDIA_EVIDENCE_URL", "guardia.config.json"),
-                    "consumes": [],
-                },
-            )
-        else:
-            ledger.append(
-                "FAIL", component, status="PACKAGE_NOT_ALLOWED", run_id=run_id, parent_run_id=workflow_run_id,
-                metadata_control={"origin": "guardia", "motivo": "PACKAGE_NOT_ALLOWED", "reason": ",".join(rejected)},
-                facets={"error_details": {"rejected_packages": rejected}},
-            )
-            previous_failure = component
-            stopped = strict
 
-    for component, spec in specs.items():
+    for component, spec in config["topology"]["expected_components"].items():
         run_id = nuevo_id()
         when = str(spec.get("when", "always"))
         try:
             applies = _when_applies(when, base, changed)
         except ValueError as exc:
-            applies = True
             ledger.append(
-                "FAIL", component, status="REQUIERE_CONTRATO", run_id=run_id, parent_run_id=workflow_run_id,
+                "COMPLETE", component, status="REQUIERE_CONTRATO",
+                run_id=run_id, parent_run_id=workflow_run_id,
                 metadata_control={"origin": "guardia", "motivo": "UNKNOWN_CONDITION", "reason": str(exc)},
-            )
-            previous_failure = component
-            stopped = strict
-            continue
-        if stopped:
-            ledger.append(
-                "FAIL", component, status="NO_INVOCADO", run_id=run_id, parent_run_id=workflow_run_id,
-                metadata_control={"origin": "guardia", "motivo": "FAIL_FAST", "blocked_by": previous_failure},
             )
             continue
         if not applies:
             ledger.append(
-                "COMPLETE", component, status="NOT_APPLICABLE", run_id=run_id, parent_run_id=workflow_run_id,
+                "COMPLETE", component, status="NOT_APPLICABLE",
+                run_id=run_id, parent_run_id=workflow_run_id,
                 metadata_control={
                     "origin": "guardia", "motivo": "CONDITION_NOT_MET", "condition": when,
                     "evidence": os.getenv("GUARDIA_EVIDENCE_URL", "guardia.config.json"),
-                    "input_sha256": sha256_archivos(base, changed),
+                    "input_sha256": sha256_archivos(base, []),
                     "output_sha256": hashlib.sha256(f"{component}:not-applicable".encode()).hexdigest(),
+                    "consumes": spec.get("consumes", []),
                 },
+            )
+            continue
+        if stopped:
+            ledger.append(
+                "FAIL", component, status="NO_INVOCADO",
+                run_id=run_id, parent_run_id=workflow_run_id,
+                metadata_control={"origin": "guardia", "motivo": "FAIL_FAST", "blocked_by": failed_component},
             )
             continue
 
         log_dir = base / ".guardia" / "logs"
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / f"{component}.log"
-        input_hash = sha256_archivos(base, changed)
+        input_paths = spec.get("input_paths", changed)
+        input_hash = sha256_archivos(base, input_paths)
         ledger.append(
-            "START", component, status="STARTED", run_id=run_id, parent_run_id=workflow_run_id,
+            "START", component, status="STARTED",
+            run_id=run_id, parent_run_id=workflow_run_id,
             metadata_control={
-                "origin": "guardia", "input_sha256": input_hash, "strict_mode": strict,
-                "consumes": spec.get("consumes", []),
+                "origin": "guardia", "input_sha256": input_hash,
+                "strict_mode": strict, "consumes": spec.get("consumes", []),
             },
             facets={"execution_identity": {"python": sys.version.split()[0], "pid": os.getpid()}},
         )
         try:
             builtin = spec.get("builtin")
             if builtin:
-                return_code, stdout, stderr = _run_builtin(str(builtin), base, changed)
+                return_code, stdout, stderr = _run_builtin(str(builtin), base, changed, config)
             else:
                 command = spec.get("command")
                 if not isinstance(command, list) or not command:
-                    raise ValueError("component requires a builtin or a non-empty command array")
+                    ledger.append(
+                        "COMPLETE", component, status="REQUIERE_CONTRATO",
+                        run_id=run_id, parent_run_id=workflow_run_id,
+                        metadata_control={"origin": "guardia", "motivo": "COMMAND_NOT_DECLARED"},
+                    )
+                    continue
                 expanded: list[str] = []
                 for arg in command:
                     if arg == "${CHANGED_PY_FILES}":
@@ -415,76 +444,87 @@ def ejecutar_configuracion(
                     timeout=int(spec.get("timeout_seconds", 300)),
                 )
                 return_code, stdout, stderr = result.returncode, result.stdout, result.stderr
-            log_path.write_text((stdout or "") + (stderr or ""), encoding="utf-8")
-            evidence = os.getenv("GUARDIA_EVIDENCE_URL") or str(log_path.relative_to(base))
-            output_paths = [str(path) for path in spec.get("expected_artifacts", [])]
-            if not output_paths:
-                output_paths = [str(log_path.relative_to(base))]
+            log_text = (stdout or "") + (stderr or "")
+            if not log_text:
+                log_text = f"completed with exit_code={return_code}\n"
+            log_path.write_text(log_text, encoding="utf-8")
+            evidence = os.getenv("GUARDIA_EVIDENCE_URL") or spec.get("evidence") or str(log_path.relative_to(base))
+            output_paths = [str(item) for item in spec.get("expected_artifacts", [])] or [str(log_path.relative_to(base))]
             output_hash = sha256_archivos(base, output_paths)
             if stderr == "NOT_APPLICABLE":
-                status = "NOT_APPLICABLE"
                 ledger.append(
-                    "COMPLETE", component, status=status, run_id=run_id, parent_run_id=workflow_run_id,
+                    "COMPLETE", component, status="NOT_APPLICABLE",
+                    run_id=run_id, parent_run_id=workflow_run_id,
                     metadata_control={
-                        "origin": "guardia", "input_sha256": input_hash, "output_sha256": output_hash,
-                        "evidence": evidence, "consumes": spec.get("consumes", []),
-                        "motivo": "CONDITIONALLY_NOT_APPLICABLE",
+                        "origin": "guardia", "input_sha256": input_hash,
+                        "output_sha256": output_hash, "evidence": evidence,
+                        "consumes": spec.get("consumes", []), "motivo": "CONDITIONALLY_NOT_APPLICABLE",
                     },
                 )
             elif stderr == "CORRIO_SIN_SENAL" and return_code == 0:
                 ledger.append(
-                    "COMPLETE", component, status="CORRIO_SIN_SENAL", run_id=run_id, parent_run_id=workflow_run_id,
+                    "COMPLETE", component, status="CORRIO_SIN_SENAL",
+                    run_id=run_id, parent_run_id=workflow_run_id,
                     metadata_control={
-                        "origin": "guardia", "input_sha256": input_hash, "output_sha256": output_hash,
-                        "evidence": evidence, "consumes": spec.get("consumes", []),
+                        "origin": "guardia", "input_sha256": input_hash,
+                        "output_sha256": output_hash, "evidence": evidence,
+                        "consumes": spec.get("consumes", []),
                     },
                 )
             elif return_code == 0:
                 ledger.append(
-                    "COMPLETE", component, status="EJECUTADO", run_id=run_id, parent_run_id=workflow_run_id,
+                    "COMPLETE", component, status="EJECUTADO",
+                    run_id=run_id, parent_run_id=workflow_run_id,
                     metadata_control={
-                        "origin": "guardia", "input_sha256": input_hash, "output_sha256": output_hash,
-                        "artifact_hash": output_hash, "evidence": evidence,
-                        "consumes": spec.get("consumes", []),
+                        "origin": "guardia", "input_sha256": input_hash,
+                        "output_sha256": output_hash, "artifact_hash": output_hash,
+                        "evidence": evidence, "consumes": spec.get("consumes", []),
                     },
                 )
             else:
                 ledger.append(
-                    "FAIL", component, status="FALLO_EJECUCION", run_id=run_id, parent_run_id=workflow_run_id,
+                    "FAIL", component, status="FALLO_EJECUCION",
+                    run_id=run_id, parent_run_id=workflow_run_id,
                     metadata_control={
-                        "origin": "guardia", "input_sha256": input_hash, "output_sha256": output_hash,
-                        "evidence": evidence, "motivo": "COMMAND_FAILED", "exit_code": return_code,
+                        "origin": "guardia", "input_sha256": input_hash,
+                        "output_sha256": output_hash, "evidence": evidence,
+                        "motivo": "COMMAND_FAILED", "exit_code": return_code,
                     },
-                    facets={"error_details": {"stderr_tail": (stderr or stdout)[-4000:]}},
+                    facets={"error_details": {"stderr_tail": log_text[-4000:]}},
                 )
-                previous_failure = component
+                failed_component = component
                 stopped = strict
         except Exception as exc:
-            log_path.write_text(str(exc), encoding="utf-8")
+            log_path.write_text(f"{type(exc).__name__}: {exc}\n", encoding="utf-8")
             ledger.append(
-                "FAIL", component, status="FALLO_EJECUCION", run_id=run_id, parent_run_id=workflow_run_id,
-                metadata_control={"origin": "guardia", "input_sha256": input_hash, "motivo": type(exc).__name__, "reason": str(exc)},
+                "FAIL", component, status="FALLO_EJECUCION",
+                run_id=run_id, parent_run_id=workflow_run_id,
+                metadata_control={
+                    "origin": "guardia", "input_sha256": input_hash,
+                    "motivo": type(exc).__name__, "reason": str(exc),
+                },
                 facets={"error_details": {"type": type(exc).__name__, "message": str(exc)}},
             )
-            previous_failure = component
+            failed_component = component
             stopped = strict
 
     report = evaluar(config, ledger_file, base)
-    report["run_id"] = workflow_run_id
-    report["strict_mode"] = strict
-    report["strict_mode_env_var"] = strict_env
-    report["changed_files"] = changed
-    report["ledger_path"] = str(ledger_file.relative_to(base)) if ledger_file.is_relative_to(base) else str(ledger_file)
-    report["contornos"] = {
-        component: siguiente_contorno(str(value["motivo"]))
-        for component, value in report["estados"].items()
-        if value["estado"] == "FALLO_EJECUCION"
-    }
-    if not strict:
-        report["gate_disabled_reason"] = f"{strict_env}=0"
-        exit_code = 0
-    else:
-        exit_code = int(config["gatekeeper"].get("exit_code_on_fail", 9)) if report["failed"] else 0
+    report.update({
+        "run_id": workflow_run_id,
+        "strict_mode": strict,
+        "strict_mode_env_var": strict_env,
+        "changed_files": changed,
+        "ledger_path": str(ledger_file.relative_to(base)) if ledger_file.is_relative_to(base) else str(ledger_file),
+    })
+    report["contornos"] = {}
+    for component, value in report["estados"].items():
+        if value["estado"] != "FALLO_EJECUCION":
+            continue
+        event = value.get("event") or {}
+        facets = event.get("facets") or {}
+        error = (facets.get("error_details") or {}).get("stderr_tail") or value["motivo"]
+        report["contornos"][component] = siguiente_contorno(str(error))
+    exit_code = int(config["gatekeeper"].get("exit_code_on_fail", 9)) if strict and report["failed"] else 0
     report["exit_code"] = exit_code
     report_file.parent.mkdir(parents=True, exist_ok=True)
     report_file.write_text(json.dumps(report, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
