@@ -88,13 +88,13 @@ def _changed_files(root: Path) -> list[str]:
 
 
 def _tests_present(root: Path) -> bool:
-    return any(p.is_dir() for p in root.rglob("tests") if ".git" not in p.parts and ".guardia" not in p.parts)
+    return any(p.is_dir() for p in root.rglob("tests") if ".git" not in p.parts and ".guardia" not in p.parts and "_guardia" not in p.parts)
 
 
 def _smoke_files(root: Path) -> list[Path]:
     return sorted(
         p for p in root.rglob("*")
-        if p.is_file() and ".git" not in p.parts and ".guardia" not in p.parts
+        if p.is_file() and ".git" not in p.parts and ".guardia" not in p.parts and "_guardia" not in p.parts
         and (
             p.name == "supervisor.smoke"
             or (p.name.startswith("smoke") and p.suffix in {".sh", ".py"})
@@ -104,7 +104,7 @@ def _smoke_files(root: Path) -> list[Path]:
 
 
 def _requirements(root: Path) -> list[Path]:
-    return sorted(p for p in root.rglob("requirements*.txt") if ".git" not in p.parts and ".guardia" not in p.parts)
+    return sorted(p for p in root.rglob("requirements*.txt") if ".git" not in p.parts and ".guardia" not in p.parts and "_guardia" not in p.parts)
 
 
 def _package_policy(root: Path, config: dict[str, Any]) -> tuple[bool, list[str], str]:
@@ -240,14 +240,14 @@ def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, An
             return 0, "No tests directory.\n", "NOT_APPLICABLE"
         test_paths = list((spec or {}).get("test_paths", []))
         if importlib.util.find_spec("pytest") is not None:
-            command = [sys.executable, "-m", "pytest", "-q", *test_paths]
+            command = [sys.executable, "-m", "pytest", "-q", "--ignore=_guardia", "--ignore=.guardia", *test_paths]
             result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
             return result.returncode, result.stdout, result.stderr
         if test_paths:
             return 1, "", "TEST_PATHS_REQUIRE_PYTEST"
         directories = sorted(
             p for p in root.rglob("tests")
-            if p.is_dir() and ".git" not in p.parts and ".guardia" not in p.parts
+            if p.is_dir() and ".git" not in p.parts and ".guardia" not in p.parts and "_guardia" not in p.parts
         )
         outputs: list[str] = []
         errors: list[str] = []
