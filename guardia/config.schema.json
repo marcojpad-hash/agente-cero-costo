@@ -44,6 +44,7 @@
               "builtin": {"type": "string"},
               "command": {"type": "array", "items": {"type": "string"}},
               "timeout_seconds": {"type": "integer", "minimum": 1},
+              "test_paths": {"type": "array", "items": {"type": "string"}},
               "input_paths": {"type": "array", "items": {"type": "string"}},
               "evidence": {"type": "string"},
               "expected_artifacts": {"type": "array", "items": {"type": "string"}},
