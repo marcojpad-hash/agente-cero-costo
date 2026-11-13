@@ -183,23 +183,45 @@ def componente(
         )
         raise
     else:
-        output_hash = sha256_archivos(target.root, output_paths or [])
-        target.append(
-            "COMPLETE",
-            component,
-            status="EJECUTADO",
-            run_id=run_id,
-            parent_run_id=parent_run_id,
-            metadata_control={
-                "origin": origin,
-                "input_sha256": inputs,
-                "output_sha256": output_hash,
-                "artifact_hash": output_hash,
-                "evidence": evidence,
-            },
-            facets={"execution_identity": {"pid": os.getpid()}},
-            payload_negocio=payload_negocio,
-        )
+        existing_outputs = [
+            (target.root / item).resolve()
+            for item in (output_paths or [])
+            if (target.root / item).exists()
+        ]
+        if not existing_outputs:
+            target.append(
+                "COMPLETE",
+                component,
+                status="CORRIO_SIN_SENAL",
+                run_id=run_id,
+                parent_run_id=parent_run_id,
+                metadata_control={
+                    "origin": origin,
+                    "input_sha256": inputs,
+                    "evidence": evidence,
+                    "motivo": "NO_OUTPUT_ARTIFACT",
+                },
+                facets={"execution_identity": {"pid": os.getpid()}},
+                payload_negocio=payload_negocio,
+            )
+        else:
+            output_hash = sha256_archivos(target.root, output_paths or [])
+            target.append(
+                "COMPLETE",
+                component,
+                status="EJECUTADO",
+                run_id=run_id,
+                parent_run_id=parent_run_id,
+                metadata_control={
+                    "origin": origin,
+                    "input_sha256": inputs,
+                    "output_sha256": output_hash,
+                    "artifact_hash": output_hash,
+                    "evidence": evidence,
+                },
+                facets={"execution_identity": {"pid": os.getpid()}},
+                payload_negocio=payload_negocio,
+            )
     finally:
         _RUN_ID.reset(token_run)
         _PARENT_RUN_ID.reset(token_parent)
