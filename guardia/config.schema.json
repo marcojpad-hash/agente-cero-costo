@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Generic execution guard configuration",
+  "type": "object",
+  "required": ["security", "gatekeeper", "topology"],
+  "properties": {
+    "project": {"type": "string"},
+    "security": {
+      "type": "object",
+      "required": ["allowed_packages", "fail_on_outside_artifact"],
+      "properties": {
+        "allowed_packages": {"type": "array", "items": {"type": "string"}},
+        "fail_on_outside_artifact": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    },
+    "gatekeeper": {
+      "type": "object",
+      "required": ["exit_code_on_fail", "strict_mode_env_var", "exclude_sidecars"],
+      "properties": {
+        "exit_code_on_fail": {"type": "integer", "minimum": 1},
+        "strict_mode_env_var": {"type": "string", "minLength": 1},
+        "strict_mode_default": {"type": "boolean"},
+        "exclude_sidecars": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "topology": {
+      "type": "object",
+      "required": ["expected_components"],
+      "properties": {
+        "expected_components": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": ["required", "terminal", "feeds", "requires_input", "expected_artifacts", "expected_keys_in_output"],
+            "properties": {
+              "required": {"type": "boolean"},
+              "terminal": {"type": "boolean"},
+              "feeds": {"type": "array", "items": {"type": "string"}},
+              "consumes": {"type": "array", "items": {"type": "string"}},
+              "requires_input": {"type": "boolean"},
+              "when": {"type": "string"},
+              "builtin": {"type": "string"},
+              "command": {"type": "array", "items": {"type": "string"}},
+              "timeout_seconds": {"type": "integer", "minimum": 1},
+              "input_paths": {"type": "array", "items": {"type": "string"}},
+              "evidence": {"type": "string"},
+              "expected_artifacts": {"type": "array", "items": {"type": "string"}},
+              "expected_keys_in_output": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": "string"} }}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
