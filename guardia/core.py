@@ -241,15 +241,33 @@ def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, An
         test_paths = list((spec or {}).get("test_paths", []))
         if importlib.util.find_spec("pytest") is not None:
             command = [sys.executable, "-m", "pytest", "-q", *test_paths]
-        elif test_paths:
+            result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
+            return result.returncode, result.stdout, result.stderr
+        if test_paths:
             return 1, "", "TEST_PATHS_REQUIRE_PYTEST"
-        else:
-            command = [sys.executable, "-m", "unittest", "discover", "-s", ".", "-p", "test*.py"]
-        result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
-        output = result.stdout + result.stderr
-        if result.returncode == 0 and re.search(r"Ran 0 tests|no tests ran", output, re.I):
-            return 0, output, "CORRIO_SIN_SENAL"
-        return result.returncode, result.stdout, result.stderr
+        directories = sorted(
+            p for p in root.rglob("tests")
+            if p.is_dir() and ".git" not in p.parts and ".guardia" not in p.parts
+        )
+        outputs: list[str] = []
+        errors: list[str] = []
+        total_tests = 0
+        for directory in directories:
+            command = [
+                sys.executable, "-m", "unittest", "discover",
+                "-s", str(directory.relative_to(root)), "-p", "test*.py",
+            ]
+            result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
+            outputs.append(result.stdout)
+            errors.append(result.stderr)
+            match = re.search(r"Ran (\d+) tests?", result.stdout + result.stderr)
+            if match:
+                total_tests += int(match.group(1))
+            if result.returncode != 0:
+                return result.returncode, "".join(outputs), "".join(errors)
+        if total_tests == 0:
+            return 0, "".join(outputs), "CORRIO_SIN_SENAL"
+        return 0, "".join(outputs), "".join(errors)
     if name == "smokes":
         files = _smoke_files(root)
         if not files:
