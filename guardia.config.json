@@ -1,7 +1,7 @@
 {
   "project": "agente-cero-costo",
   "security": {
-    "allowed_packages": [],
+    "allowed_packages": ["mcp", "starlette", "uvicorn"],
     "fail_on_outside_artifact": true
   },
   "gatekeeper": {
