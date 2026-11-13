@@ -59,7 +59,7 @@ The runner stops after the first failure in strict mode and records downstream r
 
 ## Contorno
 
-After a failure, `siguiente_contorno()` classifies the obstacle (integrity, path, dependency, permission, contract or unknown) and proposes a different next route from the prior attempts. It allows at most three distinct attempts before escalation. It does not mark a component as successful and does not close an order.
+After a failure, `siguiente_contorno()` treats the obstacle as a stone and proposes a different water route (integrity, path, dependency, permission, contract or unknown). It allows at most three distinct routes before escalation. It does not mark a component as successful and does not close an order.
 
 ## Minimal use
 
