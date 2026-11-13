@@ -52,7 +52,7 @@ When strict mode is disabled, the run still records the override in the ledger a
 - `placeholder_scan`: reject placeholder markers in changed Python files.
 - `size_delta`: reject a changed Python file that is more than 20% smaller than its previous revision.
 - `package_policy`: enforce the dependency allowlist against declared requirements files.
-- `tests`: run pytest when installed, otherwise unittest discovery.
+- `tests`: run pytest when installed, otherwise unittest discovery. A project can declare `test_paths` to restrict execution to its approved test contract set.
 - `smokes`: execute discovered shell and Python smoke scripts.
 
 The runner stops after the first failure in strict mode and records downstream required components as `NO_INVOCADO`. It never converts a failed or unknown state into success.
