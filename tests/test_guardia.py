@@ -149,6 +149,8 @@ class ContextAndContourTests(unittest.TestCase):
         self.assertTrue(fourth["escalar"])
         self.assertFalse(first["marca_ok"])
         self.assertFalse(first["cierra_orden"])
+        self.assertEqual(first["tipo_obstaculo"], "piedra")
+        self.assertEqual(first["ruta_siguiente"], "agua")
 
 
 class RunnerTests(unittest.TestCase):
