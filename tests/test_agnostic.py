@@ -5,18 +5,24 @@ import hashlib
 import unittest
 
 
-ROOT = Path(__file__).resolve().parents[1]
-REPO = ROOT.parent
+REPO = Path(__file__).resolve().parents[1]
+TESTS = REPO / "tests"
 
 
 class AgnosticSurfaceTests(unittest.TestCase):
-    def test_guard_docs_and_examples_contain_no_project_specific_terms(self) -> None:
-        pattern_file = ROOT / "fixtures" / "forbidden.sha256"
+    def test_guard_docs_tests_and_examples_contain_no_project_specific_terms(self):
+        pattern_file = TESTS / "fixtures" / "forbidden.sha256"
         patterns = []
         for line in pattern_file.read_text(encoding="utf-8").splitlines():
             length, digest = line.split()
             patterns.append((int(length), digest))
-        targets = [REPO / "guardia", REPO / "docs" / "GUARDIA_OPERATIVA.md", ROOT]
+        targets = [
+            REPO / "guardia",
+            REPO / "docs" / "GUARDIA_OPERATIVA.md",
+            TESTS / "test_guardia.py",
+            TESTS / "test_agnostic.py",
+            TESTS / "fixtures",
+        ]
         files = []
         for target in targets:
             if target.is_file():
