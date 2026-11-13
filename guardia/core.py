@@ -183,7 +183,7 @@ def _check_artifacts(root: Path, spec: dict[str, Any], config: dict[str, Any]) -
     return problems
 
 
-def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, Any]) -> tuple[int, str, str]:
+def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, Any], spec: dict[str, Any] | None = None) -> tuple[int, str, str]:
     if name == "compile_changed_python":
         files = [item for item in changed if item.endswith(".py")]
         if not files:
@@ -238,8 +238,11 @@ def _run_builtin(name: str, root: Path, changed: list[str], config: dict[str, An
     if name == "tests":
         if not _tests_present(root):
             return 0, "No tests directory.\n", "NOT_APPLICABLE"
+        test_paths = list((spec or {}).get("test_paths", []))
         if importlib.util.find_spec("pytest") is not None:
-            command = [sys.executable, "-m", "pytest", "-q"]
+            command = [sys.executable, "-m", "pytest", "-q", *test_paths]
+        elif test_paths:
+            return 1, "", "TEST_PATHS_REQUIRE_PYTEST"
         else:
             command = [sys.executable, "-m", "unittest", "discover", "-s", ".", "-p", "test*.py"]
         result = subprocess.run(command, cwd=root, capture_output=True, text=True, check=False)
@@ -429,7 +432,7 @@ def ejecutar_configuracion(
         try:
             builtin = spec.get("builtin")
             if builtin:
-                return_code, stdout, stderr = _run_builtin(str(builtin), base, changed, config)
+                return_code, stdout, stderr = _run_builtin(str(builtin), base, changed, config, spec)
             else:
                 command = spec.get("command")
                 if not isinstance(command, list) or not command:
