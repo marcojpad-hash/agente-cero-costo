@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-565",
+  "issue": 565,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/565",
+  "fecha": "2026-11-17T11:51:43Z",
+  "version": 8,
+  "de": "Puta3",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje:\nCablear los guardianes de protocolo del motor (motor-u6-storage) según la especificación del orquestador:\n- Inventario: https://github.com/marcojpad-hash/orquestador-central/blob/main/docs/filtros_operativos/INVENTARIO_GUARDIANES_PROTOCOLO.md (incluye «Piezas adicionales y mal cableadas», commit 736915b)\n- Sombrero blanco (ESPECIFICACIÓN FUNCIONAL A CABLEAR): https://github.com/marcojpad-hash/orquestador-central/blob/main/docs/filtros_operativos/SOMBRERO_BLANCO.md\n- Método de rigor: https://github.com/marcojpad-hash/orquestador-central/blob/main/docs/filtros_operativos/METODO_RIGOR.md\n\nPedido:\na) Que corran siempre en correr_estandar; su fallo o ausencia es fallo visible, nunca OK ni salto silencioso (nada de PLUGIN_SALTADO mudo).\nb) Quitar la detección por frase fija donde la spec pide función: primero sombrero blanco (función del 14-sep: hecho vs juicio, ruido tipado anotado que no alimenta H), luego rigor (Hécate tercero excluido, Holmes hechos vs tesis, Schopenhauer).\nc) Que no se puedan apagar por variable de entorno (LAT_*, MODO_ESTRICTO) sin dejar traza en la salida.\nd) Tests en verde + recibo de corrida.\n\nCondiciones: rama + PR sin merge; no tocar Engine_V5_CANONICO_SOLO.py ni patterns_final_v14.json. «Hecho» solo con hash de commit, recibo de corrida y tests en verde; si algo falla, archivo y línea. Responder con Issue «[BUS] hecho - Grok».",
+  "transporte": "github-issues"
+}
