@@ -1,0 +1,169 @@
+name: Supervisor reutilizable
+
+on:
+  workflow_call:
+    secrets:
+      BUS_GITHUB_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  supervisor:
+    name: supervisor
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Checkout reusable guard package
+        uses: actions/checkout@v4
+        with:
+          repository: marcojpad-hash/agente-cero-costo
+          ref: supervisor-reutilizable-grok
+          path: _guardia
+          persist-credentials: false
+
+      - name: Install declared optional dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t requirements < <(
+            find . -type f -name 'requirements*.txt' \
+              -not -path './.git/*' \
+              -not -path './_guardia/*' \
+              -print0 | sort -z
+          )
+          for requirement in "${requirements[@]}"; do
+            echo "Installing optional manifest: $requirement"
+            python -m pip install -r "$requirement" || echo "::warning::Optional dependency install failed: $requirement"
+          done
+
+      - name: Run generic execution guard
+        env:
+          PYTHONPATH: ${{ github.workspace }}/_guardia
+          GUARDIA_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          GUARDIA_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GUARDIA_EVIDENCE_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m guardia.cli \
+            --config guardia.config.json \
+            --ledger .guardia/ledger.jsonl \
+            --report .guardia/report.json \
+            2>&1 | tee "$RUNNER_TEMP/supervisor.log"
+
+      - name: Create or comment failure order
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          BUS_GITHUB_TOKEN: ${{ secrets.BUS_GITHUB_TOKEN }}
+          SUPERVISOR_LOG: ${{ runner.temp }}/supervisor.log
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const fs = require("fs");
+            const caller = { owner: context.repo.owner, repo: context.repo.repo };
+            async function requestWithToken(token, method, path, body) {
+              const response = await fetch("https://api.github.com" + path, {
+                method,
+                headers: {
+                  "Authorization": "Bearer " + token,
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json"
+                },
+                body: body === undefined ? undefined : JSON.stringify(body)
+              });
+              if (!response.ok) throw new Error("GitHub API " + response.status + ": " + await response.text());
+              return response.status === 204 ? null : response.json();
+            }
+            const shortSha = context.sha.slice(0, 7);
+            const logPath = process.env.SUPERVISOR_LOG;
+            const logText = fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "Supervisor log was not created.";
+            const logTail = logText.split(/\r?\n/).slice(-60).join("\n");
+            let report = {};
+            try {
+              report = JSON.parse(fs.readFileSync(".guardia/report.json", "utf8"));
+            } catch (_) {}
+            const changed = Array.isArray(report.changed_files) ? report.changed_files.join(", ") : "not identified";
+            const failed = Object.entries(report.estados || {}).find((entry) => entry[1].estado === "FALLO_EJECUCION");
+            const component = failed ? failed[0] : "supervisor";
+            const title = "[BUS] indicacion - Supervisor: " + caller.owner + "/" + caller.repo + " falla en " + shortSha;
+            const body = [
+              "para: chatgpt",
+              "tipo: orden",
+              "mensaje:",
+              "repo: " + caller.owner + "/" + caller.repo,
+              "commit: " + context.sha,
+              "componente: " + component,
+              "archivos: " + changed,
+              "",
+              "Últimas 60 líneas del registro:",
+              logTail,
+              "",
+              "Instrucción: corregir en una rama nueva, abrir PR sin merge, adjuntar salida de pruebas y emitir el acuse [BUS] hecho - ChatGPT."
+            ].join("\n");
+
+            if (process.env.BUS_GITHUB_TOKEN) {
+              try {
+                const owner = "marcojpad-hash";
+                const repository = "agente-cero-costo";
+                const path = "/repos/" + owner + "/" + repository;
+                const openIssues = await requestWithToken(process.env.BUS_GITHUB_TOKEN, "GET", path + "/issues?state=open&per_page=100");
+                const existing = openIssues.find((item) => !item.pull_request && item.title === title);
+                if (existing) {
+                  await requestWithToken(process.env.BUS_GITHUB_TOKEN, "POST", path + "/issues/" + existing.number + "/comments", { body });
+                  core.info("Updated central supervisor order #" + existing.number);
+                } else {
+                  const created = await requestWithToken(process.env.BUS_GITHUB_TOKEN, "POST", path + "/issues", { title, body });
+                  core.info("Created central supervisor order #" + created.number);
+                }
+                return;
+              } catch (error) {
+                core.warning("Central bus token unavailable; creating the order in the caller repository: " + String(error));
+              }
+            }
+
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              ...caller,
+              state: "open",
+              per_page: 100
+            });
+            const existing = openIssues.find((item) => !item.pull_request && item.title === title);
+            if (existing) {
+              await github.rest.issues.createComment({
+                ...caller,
+                issue_number: existing.number,
+                body
+              });
+              core.info("Updated existing open supervisor order #" + existing.number);
+            } else {
+              const created = await github.rest.issues.create({ ...caller, title, body });
+              core.info("Created supervisor order #" + created.data.number);
+            }
+
+      - name: Upload supervisor evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supervisor-evidence-${{ github.run_id }}
+          path: .guardia/
+          if-no-files-found: warn
+          include-hidden-files: true
