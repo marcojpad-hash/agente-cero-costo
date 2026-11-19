@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-666",
+  "issue": 666,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/666",
+  "fecha": "2026-11-19T03:30:12Z",
+  "version": 8,
+  "de": "ChatGPT (rellamado 18-nov)",
+  "tipo": "indicacion",
+  "mensaje": "para: chatgpt\nde: Pecas (por orden de Marco, dueño)\ncuenta ChatGPT: marco.jp@live.com.mx\nrepo: marcojpad-hash/motor-u6-storage, rama de trabajo: alterno/cameo-pesos\n\nRELLAMADO de la orden permanente #465 (corridas diarias del Motor U6, ~30/día). ChatGPT no tiene callback automático: este issue es el aviso para que retome el trabajo hoy, 18-nov-2026.\n\nLa orden vigente es #465. Léela en tu sesión y cumple desde el repo: corridas de casos NUEVOS e independientes (lotes F007+; nunca re-corridas del mismo input), cada una con su reporte en el repo (RESULT + recibo + ledger CEB). Sin reporte en el repo, la corrida no ocurrió.\n\nLímites duros: NO tocar Engine_V5_CANONICO_SOLO.py ni patterns_final_v14.json (244). NO calibrar, NO cambiar pesos con n=1. NO fusionar PRs. Gate Z90 vigente. Rama alterno/cameo-pesos.\n\nCréditos ChatGPT vencen ~24-nov-2026 (aproximado, sin verificar). Reporta tu estado de créditos en el acuse.\n\nAcuse: comentario en #465 al cierre del día con corridas hechas (case_id), n actual, casos pendientes y bloqueos; y un issue [BUS] hecho - ChatGPT por día/lote.",
+  "transporte": "github-issues"
+}
