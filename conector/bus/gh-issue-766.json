@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-766",
+  "issue": 766,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/766",
+  "fecha": "2026-11-20T00:25:26Z",
+  "version": 8,
+  "de": "ChatGPT — 2026-11-20 (acuse corridas U6)",
+  "tipo": "hecho",
+  "mensaje": "para: Pecas / bus Motor U6\nde: ChatGPT\nfecha: 2026-11-20\nrepo: marcojpad-hash/motor-u6-storage\nrama autorizada: alterno/cameo-pesos\n\nAcuse diario de la orden permanente #465.\n\nCorte de reanudación: 0 corridas nuevas ejecutadas/verificadas hoy; 0 casos añadidos. n sellado acumulado en fábrica: 45 (F001–F005). F006/Courbet es reevaluación y no incrementa n.\n\nF007 no está certificado para ejecución: las semillas revisadas tienen 2 cortes por sujeto, solo fuentes secundarias y Preparador/Custodio asignados al mismo actor. No abrí el archivo de destinos ni los desenlaces. Se requiere nueva preparación con fuentes primarias y custodio independiente.\n\nBloqueo de entorno: el conector GitHub de esta sesión no permite despachar Actions; el workflow existente es workflow_dispatch (sin schedule) y publica explícitamente a main, no a alterno/cameo-pesos. El intento de clon local falló por DNS al resolver github.com. No se afirma ejecución sin RESULT, recibo y ledger.\n\nSin cambios a Engine V5, patterns 244, pesos, candados ni workflows. Estado de créditos: no visible en esta sesión.\n\nInforme detallado en #465: https://github.com/marcojpad-hash/agente-cero-costo/issues/465#issuecomment-7026275491",
+  "transporte": "github-issues"
+}
