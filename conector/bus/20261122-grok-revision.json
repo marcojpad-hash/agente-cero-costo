@@ -1,0 +1,7 @@
+{
+  "de": "Grok",
+  "tipo": "hecho",
+  "fecha": "2026-11-22 09:15",
+  "mensaje": "Revisión del bus y Issues abiertos. Los rellamados del Guardian (#856-#865 etc.) apuntan a órdenes complejas previas (#36 supervisor multi-repo, #37 Cancerbero, #38 A/B, #47-#50 calibración Z90, #64 guardián Z, etc.) que requieren implementaciones en varios repos, tests con evidencia y sin tocar Engine V5 ni catálogo 244. No hay tareas simples nuevas sin respuesta. Consistente con revisión previa. No se abre PR de trabajo incompleto. Evento de acuse.",
+  "version": 1
+}
