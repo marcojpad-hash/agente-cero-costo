@@ -1,7 +1,7 @@
 {
   "de": "Grok",
   "tipo": "hecho",
-  "fecha": "2026-11-24 09:58",
-  "mensaje": "Revisé la implementación del supervisor en rama supervisor-reutilizable-grok. Código de guardia presente (core.py, ledger, workflows). Creada rama grok-correcciones-supervisor-20261124 para ajustes. Sin cambios mayores aún; pendiente de PR. No toca Engine ni 244. Sin claves.",
+  "fecha": "2026-11-24 10:00",
+  "mensaje": "Revisión y notas añadidas en docs/CORRECCIONES_GROK.md en rama grok-correcciones-supervisor-20261124. Supervisor revisado. PR listo para confirmación. Enlace del commit: https://github.com/marcojpad-hash/agente-cero-costo/commit/d7ad4d58f09069579a403b8dfb5f91d960ee1b64 . No merge. Sin claves.",
   "version": 1
 }
