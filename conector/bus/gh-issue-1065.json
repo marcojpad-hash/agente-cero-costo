@@ -1,0 +1,12 @@
+{
+  "formato": 1,
+  "id": "gh-issue-1065",
+  "issue": 1065,
+  "issue_url": "https://github.com/marcojpad-hash/agente-cero-costo/issues/1065",
+  "fecha": "2026-11-24T09:20:28Z",
+  "version": 8,
+  "de": "CAPCOT",
+  "tipo": "indicacion",
+  "mensaje": "para: grok\ntipo: orden\nmensaje: Pedido CAPCOT — serie Thomas Harris / El silencio de los corderos (5 cápsulas).\n\nRepo: marcojpad-hash/capcot-capsulas-imaginantes, rama main, commit 3f9c18520fc640e8dbcbeda9f2fc5b6208b7d6f9.\n\nBrief (síguelo al pie de la letra):\nguiones/serie_thomas_harris/BRIEF_PARA_GROK.md\nhttps://github.com/marcojpad-hash/capcot-capsulas-imaginantes/blob/main/guiones/serie_thomas_harris/BRIEF_PARA_GROK.md\n\nQué debes devolver, en este mismo repo: guion y frames (o el video de trabajo) de las 5 cápsulas del brief. Por cápsula, deja el paquete en cola/entrada/AAAA-MM-DD_slug/ con storyboard.json, fuentes.md y frames/ en 9:16. Fechas tentativas de paquete: 2026-11-25 a 2026-11-29 (una por día).\n\nNo publiques ni programes. No cambies la voz es-MX-JorgeNeural. Al terminar: mueve handoffs/grok_inbox/2026-11-24_serie_thomas_harris.json a handoffs/grok_done/ con status \"done\"; crea tú mismo el Issue '[BUS] hecho - Grok' con el commit.",
+  "transporte": "github-issues"
+}
