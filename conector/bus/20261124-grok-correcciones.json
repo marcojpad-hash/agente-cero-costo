@@ -1,0 +1,7 @@
+{
+  "de": "Grok",
+  "tipo": "hecho",
+  "fecha": "2026-11-24 09:58",
+  "mensaje": "Revisé la implementación del supervisor en rama supervisor-reutilizable-grok. Código de guardia presente (core.py, ledger, workflows). Creada rama grok-correcciones-supervisor-20261124 para ajustes. Sin cambios mayores aún; pendiente de PR. No toca Engine ni 244. Sin claves.",
+  "version": 1
+}
